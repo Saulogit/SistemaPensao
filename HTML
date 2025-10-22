@@ -49,6 +49,15 @@
         .btn-danger:hover {
             background-color: #b91c1c;
         }
+        .btn-outline-danger {
+            background-color: transparent;
+            color: #dc2626;
+            border: 1px solid #dc2626;
+            padding: 0.25rem 0.5rem;
+        }
+        .btn-outline-danger:hover {
+            background-color: #fef2f2;
+        }
         .input-field {
             width: 100%;
             padding: 0.75rem;
@@ -178,19 +187,34 @@
                 </div>
             </div>
 
-            <!-- Coluna da Direita: Gestão de Fiado -->
-            <div class="card h-fit">
-                <h2 class="text-2xl font-bold text-gray-700 mb-2 flex items-center gap-2">
-                    <i data-lucide="users"></i>
-                    Gestão de Fiado
-                </h2>
-                <div class="flex justify-between items-center bg-red-100 p-3 rounded-lg mb-4">
-                    <span class="font-bold text-red-700">VALOR TOTAL EM ABERTO:</span>
-                    <span id="totalFiadoGeral" class="text-xl font-bold text-red-700">R$ 0,00</span>
+            <!-- Coluna da Direita: Vendas e Fiado -->
+            <div class="flex flex-col gap-8">
+                <!-- Card de Vendas do Dia -->
+                <div class="card h-fit">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <i data-lucide="clipboard-list"></i>
+                        Vendas Registradas no Dia
+                    </h2>
+                    <div id="listaVendasHoje" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+                        <!-- Vendas serão inseridas aqui -->
+                        <p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>
+                    </div>
                 </div>
-                <div id="listaClientesFiado" class="space-y-4">
-                    <!-- Clientes serão inseridos aqui dinamicamente -->
-                    <p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>
+
+                <!-- Card de Gestão de Fiado -->
+                <div class="card h-fit">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <i data-lucide="users"></i>
+                        Gestão de Fiado
+                    </h2>
+                    <div class="flex justify-between items-center bg-red-100 p-3 rounded-lg mb-4">
+                        <span class="font-bold text-red-700">VALOR TOTAL EM ABERTO:</span>
+                        <span id="totalFiadoGeral" class="text-xl font-bold text-red-700">R$ 0,00</span>
+                    </div>
+                    <div id="listaClientesFiado" class="space-y-4">
+                        <!-- Clientes serão inseridos aqui dinamicamente -->
+                        <p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -242,6 +266,9 @@
         // Seção de Fiado
         const listaClientesFiadoEl = document.getElementById('listaClientesFiado');
         const totalFiadoGeralEl = document.getElementById('totalFiadoGeral');
+
+        // Seção de Vendas do Dia
+        const listaVendasHojeEl = document.getElementById('listaVendasHoje');
 
         // Modal de Senha
         const senhaModal = document.getElementById('senhaModal');
@@ -339,9 +366,50 @@
             lucide.createIcons(); // Recria os ícones
         };
 
+        const renderizarVendasDoDia = () => {
+            listaVendasHojeEl.innerHTML = '';
+            if (vendasHoje.length === 0) {
+                listaVendasHojeEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>';
+                return;
+            }
+
+            // Cria uma cópia para não alterar o array original ao ordenar
+            const vendasOrdenadas = [...vendasHoje].sort((a, b) => a.comanda - b.comanda);
+
+            vendasOrdenadas.forEach((venda, index) => {
+                // O índice original é necessário para a remoção
+                const originalIndex = vendasHoje.findIndex(v => v.data === venda.data && v.comanda === venda.comanda);
+
+                const vendaDiv = document.createElement('div');
+                vendaDiv.className = 'flex justify-between items-center p-2 rounded-md even:bg-gray-50';
+                
+                let tipoPagamentoIcon = '';
+                switch(venda.tipo) {
+                    case 'Dinheiro': tipoPagamentoIcon = '<i data-lucide="dollar-sign" class="w-4 h-4 text-green-600"></i>'; break;
+                    case 'Cartão': tipoPagamentoIcon = '<i data-lucide="credit-card" class="w-4 h-4 text-blue-600"></i>'; break;
+                    case 'Pix': tipoPagamentoIcon = '<i data-lucide="smartphone" class="w-4 h-4 text-purple-600"></i>'; break;
+                    case 'Fiado': tipoPagamentoIcon = '<i data-lucide="book-user" class="w-4 h-4 text-red-600"></i>'; break;
+                }
+
+                vendaDiv.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-gray-700 w-10 text-center">${venda.comanda}</span>
+                        <span class="font-semibold text-gray-800">${formatarMoeda(venda.valor)}</span>
+                        <span class="flex items-center gap-1 text-sm text-gray-500">${tipoPagamentoIcon} ${venda.tipo}</span>
+                    </div>
+                    <button class="btn btn-outline-danger text-xs remover-venda-btn" data-venda-index="${originalIndex}">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>Remover
+                    </button>
+                `;
+                listaVendasHojeEl.appendChild(vendaDiv);
+            });
+            lucide.createIcons();
+        };
+
         const atualizarUI = () => {
             renderizarResumoDiario();
             renderizarClientesFiado();
+            renderizarVendasDoDia();
         };
 
         // --- LÓGICA DE EVENTOS ---
@@ -381,7 +449,7 @@
                 comanda: numeroComanda,
                 valor,
                 tipo: tipoPagamento,
-                data: new Date().toISOString()
+                data: new Date().toISOString() // Adiciona um timestamp para identificador único
             };
 
             if (tipoPagamento === 'Fiado') {
@@ -437,6 +505,37 @@
             }
         });
 
+        // Evento para remover uma venda da lista do dia
+        listaVendasHojeEl.addEventListener('click', (e) => {
+            const target = e.target.closest('.remover-venda-btn');
+            if (!target) return;
+
+            const index = parseInt(target.dataset.vendaIndex);
+            const vendaParaRemover = vendasHoje[index];
+
+            if (confirm(`Tem certeza que deseja remover a venda da comanda Nº ${vendaParaRemover.comanda}?`)) {
+                // Se for 'Fiado', ajusta a dívida do cliente
+                if (vendaParaRemover.tipo === 'Fiado' && vendaParaRemover.cliente) {
+                    const cliente = vendaParaRemover.cliente;
+                    if (clientesFiado[cliente]) {
+                        clientesFiado[cliente] -= vendaParaRemover.valor;
+                        if (clientesFiado[cliente] < 0.01) {
+                            delete clientesFiado[cliente];
+                        }
+                    }
+                }
+
+                // Remove o número da comanda da lista de controle
+                comandasHoje = comandasHoje.filter(c => c !== vendaParaRemover.comanda);
+                
+                // Remove a venda
+                vendasHoje.splice(index, 1);
+
+                salvarDados();
+                atualizarUI();
+            }
+        });
+
         // Lógica de encerramento do dia
         resetarDiaBtn.addEventListener('click', () => {
             if (comandasHoje.length === 0) {
@@ -454,7 +553,7 @@
                 return;
             }
 
-            const maxComandaRegistrada = Math.max(...comandasHoje);
+            const maxComandaRegistrada = comandasHoje.length > 0 ? Math.max(...comandasHoje) : 0;
             if(ultimaComandaInformada < maxComandaRegistrada) {
                 alert(`O número da última comanda (${ultimaComandaInformada}) não pode ser menor que a maior comanda já registrada (${maxComandaRegistrada}).`);
                 ultimaComandaInput.focus();
