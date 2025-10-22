@@ -84,9 +84,15 @@
                         Registrar Nova Venda
                     </h2>
                     <form id="vendaForm" class="space-y-4">
-                        <div>
-                            <label for="valorVenda" class="block text-sm font-medium text-gray-600 mb-1">Valor da Venda (R$)</label>
-                            <input type="number" id="valorVenda" step="0.01" class="input-field" placeholder="Ex: 25.50" required>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="numeroComanda" class="block text-sm font-medium text-gray-600 mb-1">Nº da Comanda</label>
+                                <input type="number" id="numeroComanda" class="input-field" placeholder="Ex: 15" required>
+                            </div>
+                            <div>
+                                <label for="valorVenda" class="block text-sm font-medium text-gray-600 mb-1">Valor da Venda (R$)</label>
+                                <input type="number" id="valorVenda" step="0.01" class="input-field" placeholder="Ex: 25.50" required>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-600 mb-2">Forma de Pagamento</label>
@@ -152,10 +158,23 @@
                             <span id="totalFiadoHoje">R$ 0,00</span>
                         </div>
                     </div>
-                    <button id="resetarDiaBtn" class="btn btn-danger w-full mt-6">
-                        <i data-lucide="power-off"></i>
-                        Zerar e Iniciar Novo Dia
-                    </button>
+                    <div class="mt-4 pt-4 border-t">
+                        <h4 class="font-semibold text-gray-600 mb-2">Comandas Registradas Hoje:</h4>
+                        <p id="comandasRegistradas" class="text-sm text-gray-500 break-words leading-relaxed">Nenhuma comanda registrada.</p>
+                    </div>
+                    
+                    <!-- Seção de Encerramento de Dia -->
+                    <div class="mt-6 pt-6 border-t border-dashed">
+                         <h3 class="text-lg font-bold text-gray-700 mb-3">Encerrar Expediente</h3>
+                         <div>
+                            <label for="ultimaComandaInput" class="block text-sm font-medium text-gray-600 mb-1">Informe o número da última comanda:</label>
+                            <input type="number" id="ultimaComandaInput" class="input-field" placeholder="Ex: 15">
+                        </div>
+                        <button id="resetarDiaBtn" class="btn btn-danger w-full mt-3">
+                            <i data-lucide="power-off"></i>
+                            Verificar e Encerrar Dia
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -178,6 +197,26 @@
 
     </div>
 
+    <!-- Modal de Senha -->
+    <div id="senhaModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                    <i data-lucide="shield-alert" class="h-6 w-6 text-yellow-600"></i>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Atenção!</h3>
+                <div class="mt-2 px-2 py-3">
+                    <p id="senhaModalMensagem" class="text-sm text-gray-500 mb-4">Uma ou mais comandas estão faltando. Digite a senha de administrador para forçar o encerramento.</p>
+                    <input type="password" id="senhaInput" class="input-field" placeholder="Digite a senha">
+                </div>
+                <div class="items-center px-4 py-3 gap-2 flex">
+                    <button id="cancelarSenhaBtn" class="btn bg-gray-200 text-gray-800 hover:bg-gray-300 w-full">Cancelar</button>
+                    <button id="confirmarSenhaBtn" class="btn btn-danger w-full">Confirmar Encerramento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Inicializa os ícones
         lucide.createIcons();
@@ -185,10 +224,12 @@
         // Elementos da UI
         const vendaForm = document.getElementById('vendaForm');
         const valorVendaInput = document.getElementById('valorVenda');
+        const numeroComandaInput = document.getElementById('numeroComanda');
         const tipoPagamentoRadios = document.querySelectorAll('input[name="tipoPagamento"]');
         const campoClienteFiado = document.getElementById('campoClienteFiado');
         const nomeClienteFiadoInput = document.getElementById('nomeClienteFiado');
         const resetarDiaBtn = document.getElementById('resetarDiaBtn');
+        const ultimaComandaInput = document.getElementById('ultimaComandaInput');
         
         // Displays de resumo
         const totalVendasHojeEl = document.getElementById('totalVendasHoje');
@@ -196,16 +237,26 @@
         const totalCartaoEl = document.getElementById('totalCartao');
         const totalPixEl = document.getElementById('totalPix');
         const totalFiadoHojeEl = document.getElementById('totalFiadoHoje');
+        const comandasRegistradasEl = document.getElementById('comandasRegistradas');
         
         // Seção de Fiado
         const listaClientesFiadoEl = document.getElementById('listaClientesFiado');
         const totalFiadoGeralEl = document.getElementById('totalFiadoGeral');
 
+        // Modal de Senha
+        const senhaModal = document.getElementById('senhaModal');
+        const senhaModalMensagem = document.getElementById('senhaModalMensagem');
+        const senhaInput = document.getElementById('senhaInput');
+        const cancelarSenhaBtn = document.getElementById('cancelarSenhaBtn');
+        const confirmarSenhaBtn = document.getElementById('confirmarSenhaBtn');
+
         // --- LÓGICA DE DADOS ---
+        const SENHA_ADMIN = 'admin123';
 
         // Carrega os dados do localStorage ou inicializa com valores padrão
         let vendasHoje = JSON.parse(localStorage.getItem('vendasHoje')) || [];
         let clientesFiado = JSON.parse(localStorage.getItem('clientesFiado')) || {};
+        let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || [];
 
         // Função para formatar valores monetários
         const formatarMoeda = (valor) => {
@@ -216,7 +267,17 @@
         const salvarDados = () => {
             localStorage.setItem('vendasHoje', JSON.stringify(vendasHoje));
             localStorage.setItem('clientesFiado', JSON.stringify(clientesFiado));
+            localStorage.setItem('comandasHoje', JSON.stringify(comandasHoje));
         };
+        
+        const resetarDadosDoDia = () => {
+            vendasHoje = [];
+            comandasHoje = [];
+            ultimaComandaInput.value = '';
+            salvarDados();
+            atualizarUI();
+            alert('Novo dia iniciado com sucesso!');
+        }
 
         // --- LÓGICA DE RENDERIZAÇÃO ---
         
@@ -233,6 +294,7 @@
             totalCartaoEl.textContent = formatarMoeda(totais.Cartão);
             totalPixEl.textContent = formatarMoeda(totais.Pix);
             totalFiadoHojeEl.textContent = formatarMoeda(totais.Fiado);
+            comandasRegistradasEl.textContent = comandasHoje.length > 0 ? comandasHoje.sort((a, b) => a - b).join(', ') : 'Nenhuma comanda registrada.';
         };
 
         const renderizarClientesFiado = () => {
@@ -284,7 +346,6 @@
 
         // --- LÓGICA DE EVENTOS ---
         
-        // Exibe/Oculta o campo de nome do cliente para fiado
         tipoPagamentoRadios.forEach(radio => {
             radio.addEventListener('change', () => {
                 if (radio.value === 'Fiado') {
@@ -297,18 +358,27 @@
             });
         });
 
-        // Adicionar uma nova venda
         vendaForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const valor = parseFloat(valorVendaInput.value);
+            const numeroComanda = parseInt(numeroComandaInput.value);
             const tipoPagamento = document.querySelector('input[name="tipoPagamento"]:checked').value;
 
             if (isNaN(valor) || valor <= 0) {
                 alert('Por favor, insira um valor de venda válido.');
                 return;
             }
+            if (isNaN(numeroComanda) || numeroComanda <= 0) {
+                alert('Por favor, insira um número de comanda válido.');
+                return;
+            }
+            if(comandasHoje.includes(numeroComanda)) {
+                alert(`A comanda de número ${numeroComanda} já foi registrada hoje.`);
+                return;
+            }
 
             const novaVenda = {
+                comanda: numeroComanda,
                 valor,
                 tipo: tipoPagamento,
                 data: new Date().toISOString()
@@ -325,16 +395,16 @@
             }
             
             vendasHoje.push(novaVenda);
+            comandasHoje.push(numeroComanda);
             salvarDados();
             atualizarUI();
 
             vendaForm.reset();
             campoClienteFiado.classList.add('hidden');
             nomeClienteFiadoInput.required = false;
-            valorVendaInput.focus();
+            numeroComandaInput.focus();
         });
         
-        // Eventos na lista de clientes (pagar ou remover)
         listaClientesFiadoEl.addEventListener('click', (e) => {
             const target = e.target.closest('button');
             if (!target) return;
@@ -342,7 +412,7 @@
             const cliente = target.dataset.cliente;
 
             if (target.classList.contains('pagar-fiado-btn')) {
-                const inputValor = target.previousElementSibling;
+                const inputValor = target.parentElement.querySelector('input');
                 const valorPago = parseFloat(inputValor.value);
 
                 if (isNaN(valorPago) || valorPago <= 0) {
@@ -351,7 +421,7 @@
                 }
 
                 clientesFiado[cliente] -= valorPago;
-                if (clientesFiado[cliente] <= 0) {
+                if (clientesFiado[cliente] < 0.01) { // Lida com imprecisões de float
                     delete clientesFiado[cliente];
                 }
                 salvarDados();
@@ -367,15 +437,63 @@
             }
         });
 
-        // Resetar o dia
+        // Lógica de encerramento do dia
         resetarDiaBtn.addEventListener('click', () => {
-            if(confirm('Tem certeza que deseja zerar os dados do dia? Todas as vendas registradas hoje serão apagadas.')) {
-                vendasHoje = [];
-                salvarDados();
-                atualizarUI();
+            if (comandasHoje.length === 0) {
+                if(confirm('Nenhuma venda registrada. Deseja iniciar um novo dia mesmo assim?')) {
+                    resetarDadosDoDia();
+                }
+                return;
+            }
+
+            const ultimaComandaInformada = parseInt(ultimaComandaInput.value);
+
+            if (isNaN(ultimaComandaInformada) || ultimaComandaInformada <= 0) {
+                alert('Por favor, informe o número da última comanda utilizada no dia.');
+                ultimaComandaInput.focus();
+                return;
+            }
+
+            const maxComandaRegistrada = Math.max(...comandasHoje);
+            if(ultimaComandaInformada < maxComandaRegistrada) {
+                alert(`O número da última comanda (${ultimaComandaInformada}) não pode ser menor que a maior comanda já registrada (${maxComandaRegistrada}).`);
+                ultimaComandaInput.focus();
+                return;
+            }
+
+            const comandasFaltantes = [];
+            for (let i = 1; i <= ultimaComandaInformada; i++) {
+                if (!comandasHoje.includes(i)) {
+                    comandasFaltantes.push(i);
+                }
+            }
+
+            if (comandasFaltantes.length > 0) {
+                senhaModalMensagem.textContent = `As seguintes comandas estão faltando: ${comandasFaltantes.join(', ')}. Para forçar o encerramento, digite a senha de administrador.`;
+                senhaModal.classList.remove('hidden');
+                senhaInput.focus();
+            } else {
+                if(confirm('Todas as comandas estão em ordem. Deseja realmente encerrar o dia?')) {
+                    resetarDadosDoDia();
+                }
             }
         });
+        
+        cancelarSenhaBtn.addEventListener('click', () => {
+            senhaModal.classList.add('hidden');
+            senhaInput.value = '';
+        });
 
+        confirmarSenhaBtn.addEventListener('click', () => {
+            if (senhaInput.value === SENHA_ADMIN) {
+                senhaModal.classList.add('hidden');
+                senhaInput.value = '';
+                resetarDadosDoDia();
+            } else {
+                alert('Senha incorreta!');
+                senhaInput.focus();
+            }
+        });
 
         // Inicialização da aplicação
         document.addEventListener('DOMContentLoaded', atualizarUI);
