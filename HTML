@@ -42,6 +42,13 @@
         .btn-primary:hover {
             background-color: #1d4ed8;
         }
+        .btn-success {
+            background-color: #16a34a;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #15803d;
+        }
         .btn-danger {
             background-color: #dc2626;
             color: white;
@@ -69,6 +76,26 @@
             outline: none;
             border-color: #2563eb;
             box-shadow: 0 0 0 2px #bfdbfe;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #relatorioContainer, #relatorioContainer * {
+                visibility: visible;
+            }
+            #relatorioContainer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 1rem;
+                border: none;
+                box-shadow: none;
+            }
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -167,11 +194,13 @@
                             <span id="totalFiadoHoje">R$ 0,00</span>
                         </div>
                     </div>
+                    
+                    <!-- FIX: Added back the missing element for registered commanda numbers -->
                     <div class="mt-4 pt-4 border-t">
                         <h4 class="font-semibold text-gray-600 mb-2">Comandas Registradas Hoje:</h4>
                         <p id="comandasRegistradas" class="text-sm text-gray-500 break-words leading-relaxed">Nenhuma comanda registrada.</p>
                     </div>
-                    
+
                     <!-- Seção de Encerramento de Dia -->
                     <div class="mt-6 pt-6 border-t border-dashed">
                          <h3 class="text-lg font-bold text-gray-700 mb-3">Encerrar Expediente</h3>
@@ -187,7 +216,7 @@
                 </div>
             </div>
 
-            <!-- Coluna da Direita: Vendas e Fiado -->
+            <!-- Coluna da Direita: Vendas, Fiado e Relatórios -->
             <div class="flex flex-col gap-8">
                 <!-- Card de Vendas do Dia -->
                 <div class="card h-fit">
@@ -195,9 +224,27 @@
                         <i data-lucide="clipboard-list"></i>
                         Vendas Registradas no Dia
                     </h2>
-                    <div id="listaVendasHoje" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+                    <div id="listaVendasHoje" class="space-y-2 max-h-60 overflow-y-auto pr-2">
                         <!-- Vendas serão inseridas aqui -->
                         <p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>
+                    </div>
+                </div>
+
+                <!-- Card de Histórico e Relatórios -->
+                <div class="card h-fit">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <i data-lucide="history"></i>
+                        Histórico e Relatórios
+                    </h2>
+                    <div>
+                        <label for="seletorData" class="block text-sm font-medium text-gray-600 mb-1">Selecione uma data para ver o relatório:</label>
+                        <select id="seletorData" class="input-field">
+                            <option>Nenhum relatório salvo</option>
+                        </select>
+                    </div>
+                    <div id="relatorioContainer" class="mt-4 border-t pt-4">
+                        <!-- Relatório do dia selecionado será exibido aqui -->
+                        <p class="text-center text-gray-500">Selecione uma data para começar.</p>
                     </div>
                 </div>
 
@@ -212,7 +259,6 @@
                         <span id="totalFiadoGeral" class="text-xl font-bold text-red-700">R$ 0,00</span>
                     </div>
                     <div id="listaClientesFiado" class="space-y-4">
-                        <!-- Clientes serão inseridos aqui dinamicamente -->
                         <p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>
                     </div>
                 </div>
@@ -261,7 +307,6 @@
         const totalCartaoEl = document.getElementById('totalCartao');
         const totalPixEl = document.getElementById('totalPix');
         const totalFiadoHojeEl = document.getElementById('totalFiadoHoje');
-        const comandasRegistradasEl = document.getElementById('comandasRegistradas');
         
         // Seção de Fiado
         const listaClientesFiadoEl = document.getElementById('listaClientesFiado');
@@ -269,6 +314,12 @@
 
         // Seção de Vendas do Dia
         const listaVendasHojeEl = document.getElementById('listaVendasHoje');
+        const comandasRegistradasEl = document.getElementById('comandasRegistradas');
+
+
+        // Seção de Histórico
+        const seletorData = document.getElementById('seletorData');
+        const relatorioContainer = document.getElementById('relatorioContainer');
 
         // Modal de Senha
         const senhaModal = document.getElementById('senhaModal');
@@ -284,26 +335,48 @@
         let vendasHoje = JSON.parse(localStorage.getItem('vendasHoje')) || [];
         let clientesFiado = JSON.parse(localStorage.getItem('clientesFiado')) || {};
         let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || [];
+        let historicoVendas = JSON.parse(localStorage.getItem('historicoVendas')) || {};
 
-        // Função para formatar valores monetários
-        const formatarMoeda = (valor) => {
-            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        };
+        // Funções de formatação e salvamento
+        const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const formatarData = (isoString) => new Date(isoString).toLocaleDateString('pt-BR');
 
-        // Salva os dados no localStorage
         const salvarDados = () => {
             localStorage.setItem('vendasHoje', JSON.stringify(vendasHoje));
             localStorage.setItem('clientesFiado', JSON.stringify(clientesFiado));
             localStorage.setItem('comandasHoje', JSON.stringify(comandasHoje));
+            localStorage.setItem('historicoVendas', JSON.stringify(historicoVendas));
         };
         
+        const arquivarVendasDoDia = () => {
+            if (vendasHoje.length === 0) return;
+            
+            const hoje = new Date();
+            const chaveData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+            
+            const totais = vendasHoje.reduce((acc, venda) => {
+                acc[venda.tipo] = (acc[venda.tipo] || 0) + venda.valor;
+                return acc;
+            }, { 'Dinheiro': 0, 'Cartão': 0, 'Pix': 0, 'Fiado': 0 });
+
+            const totalVendas = totais.Dinheiro + totais.Cartão + totais.Pix + totais.Fiado;
+            
+            historicoVendas[chaveData] = {
+                data: hoje.toISOString(),
+                resumo: { ...totais, total: totalVendas },
+                vendas: [...vendasHoje],
+                ultimaComanda: parseInt(ultimaComandaInput.value) || Math.max(...comandasHoje)
+            };
+        };
+
         const resetarDadosDoDia = () => {
+            arquivarVendasDoDia();
             vendasHoje = [];
             comandasHoje = [];
             ultimaComandaInput.value = '';
             salvarDados();
             atualizarUI();
-            alert('Novo dia iniciado com sucesso!');
+            alert('Dia encerrado e arquivado com sucesso! Novo dia iniciado.');
         }
 
         // --- LÓGICA DE RENDERIZAÇÃO ---
@@ -321,7 +394,6 @@
             totalCartaoEl.textContent = formatarMoeda(totais.Cartão);
             totalPixEl.textContent = formatarMoeda(totais.Pix);
             totalFiadoHojeEl.textContent = formatarMoeda(totais.Fiado);
-            comandasRegistradasEl.textContent = comandasHoje.length > 0 ? comandasHoje.sort((a, b) => a - b).join(', ') : 'Nenhuma comanda registrada.';
         };
 
         const renderizarClientesFiado = () => {
@@ -335,13 +407,9 @@
                 return;
             }
 
-            // Ordena os clientes por nome
-            nomesClientes.sort();
-
-            nomesClientes.forEach(nome => {
+            nomesClientes.sort().forEach(nome => {
                 const divida = clientesFiado[nome];
                 totalGeral += divida;
-
                 const clienteDiv = document.createElement('div');
                 clienteDiv.className = 'border rounded-lg p-4 space-y-3';
                 clienteDiv.innerHTML = `
@@ -351,35 +419,26 @@
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <input type="number" step="0.01" class="input-field flex-grow" placeholder="Valor do pagamento">
-                        <button class="btn btn-primary text-sm flex-shrink-0 pagar-fiado-btn" data-cliente="${nome}">
-                            <i data-lucide="check" class="w-4 h-4"></i>Pagar/Amortizar
-                        </button>
-                        <button class="btn btn-danger text-sm flex-shrink-0 remover-cliente-btn" data-cliente="${nome}">
-                             <i data-lucide="trash-2" class="w-4 h-4"></i>Quitar e Remover
-                        </button>
-                    </div>
-                `;
+                        <button class="btn btn-primary text-sm flex-shrink-0 pagar-fiado-btn" data-cliente="${nome}"><i data-lucide="check" class="w-4 h-4"></i>Pagar/Amortizar</button>
+                        <button class="btn btn-danger text-sm flex-shrink-0 remover-cliente-btn" data-cliente="${nome}"><i data-lucide="trash-2" class="w-4 h-4"></i>Quitar e Remover</button>
+                    </div>`;
                 listaClientesFiadoEl.appendChild(clienteDiv);
             });
             
             totalFiadoGeralEl.textContent = formatarMoeda(totalGeral);
-            lucide.createIcons(); // Recria os ícones
         };
 
         const renderizarVendasDoDia = () => {
             listaVendasHojeEl.innerHTML = '';
+            comandasRegistradasEl.textContent = comandasHoje.length > 0 ? [...comandasHoje].sort((a, b) => a - b).join(', ') : 'Nenhuma comanda registrada.';
+
             if (vendasHoje.length === 0) {
                 listaVendasHojeEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>';
                 return;
             }
 
-            // Cria uma cópia para não alterar o array original ao ordenar
-            const vendasOrdenadas = [...vendasHoje].sort((a, b) => a.comanda - b.comanda);
-
-            vendasOrdenadas.forEach((venda, index) => {
-                // O índice original é necessário para a remoção
+            [...vendasHoje].sort((a, b) => a.comanda - b.comanda).forEach(venda => {
                 const originalIndex = vendasHoje.findIndex(v => v.data === venda.data && v.comanda === venda.comanda);
-
                 const vendaDiv = document.createElement('div');
                 vendaDiv.className = 'flex justify-between items-center p-2 rounded-md even:bg-gray-50';
                 
@@ -397,12 +456,64 @@
                         <span class="font-semibold text-gray-800">${formatarMoeda(venda.valor)}</span>
                         <span class="flex items-center gap-1 text-sm text-gray-500">${tipoPagamentoIcon} ${venda.tipo}</span>
                     </div>
-                    <button class="btn btn-outline-danger text-xs remover-venda-btn" data-venda-index="${originalIndex}">
-                        <i data-lucide="trash-2" class="w-3 h-3"></i>Remover
-                    </button>
-                `;
+                    <button class="btn btn-outline-danger text-xs remover-venda-btn" data-venda-index="${originalIndex}"><i data-lucide="trash-2" class="w-3 h-3"></i>Remover</button>`;
                 listaVendasHojeEl.appendChild(vendaDiv);
             });
+        };
+
+        const renderizarSeletorHistorico = () => {
+            seletorData.innerHTML = '';
+            const datasSalvas = Object.keys(historicoVendas).sort().reverse();
+
+            if (datasSalvas.length === 0) {
+                seletorData.innerHTML = '<option>Nenhum relatório salvo</option>';
+                relatorioContainer.innerHTML = '<p class="text-center text-gray-500">Selecione uma data para começar.</p>';
+                return;
+            }
+
+            seletorData.innerHTML = '<option value="">Selecione uma data</option>';
+            datasSalvas.forEach(dataKey => {
+                const option = document.createElement('option');
+                option.value = dataKey;
+                option.textContent = formatarData(historicoVendas[dataKey].data);
+                seletorData.appendChild(option);
+            });
+        };
+
+        const mostrarRelatorio = (dataKey) => {
+            if (!dataKey || !historicoVendas[dataKey]) {
+                relatorioContainer.innerHTML = '<p class="text-center text-gray-500">Selecione uma data para começar.</p>';
+                return;
+            }
+
+            const relatorio = historicoVendas[dataKey];
+            const { resumo, vendas } = relatorio;
+            
+            let vendasHtml = vendas.sort((a,b) => a.comanda - b.comanda).map(venda => `
+                <li class="flex justify-between items-center p-2 even:bg-gray-50">
+                    <span>Comanda <strong>#${venda.comanda}</strong></span>
+                    <span class="font-semibold">${formatarMoeda(venda.valor)}</span>
+                    <span class="text-sm text-gray-600">${venda.tipo} ${venda.cliente ? `(${venda.cliente})` : ''}</span>
+                </li>
+            `).join('');
+
+            relatorioContainer.innerHTML = `
+                <div class="space-y-3">
+                    <h3 class="text-xl font-bold text-gray-800">Relatório de ${formatarData(relatorio.data)}</h3>
+                    <div class="space-y-2 border-t pt-2">
+                        <div class="flex justify-between font-bold text-blue-600"><p>Venda Total:</p><p>${formatarMoeda(resumo.total)}</p></div>
+                        <div class="flex justify-between text-sm"><p>Dinheiro:</p><p>${formatarMoeda(resumo.Dinheiro)}</p></div>
+                        <div class="flex justify-between text-sm"><p>Cartão:</p><p>${formatarMoeda(resumo.Cartão)}</p></div>
+                        <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(resumo.Pix)}</p></div>
+                        <div class="flex justify-between text-sm text-red-600"><p>Fiado:</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
+                    </div>
+                    <div class="border-t pt-2">
+                        <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
+                        <ul class="space-y-1 max-h-60 overflow-y-auto pr-2">${vendasHtml}</ul>
+                    </div>
+                    <button id="imprimirBtn" class="btn btn-success w-full mt-4 no-print"><i data-lucide="printer"></i>Imprimir Relatório</button>
+                </div>
+            `;
             lucide.createIcons();
         };
 
@@ -410,54 +521,27 @@
             renderizarResumoDiario();
             renderizarClientesFiado();
             renderizarVendasDoDia();
+            renderizarSeletorHistorico();
+            lucide.createIcons();
         };
 
         // --- LÓGICA DE EVENTOS ---
         
-        tipoPagamentoRadios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                if (radio.value === 'Fiado') {
-                    campoClienteFiado.classList.remove('hidden');
-                    nomeClienteFiadoInput.required = true;
-                } else {
-                    campoClienteFiado.classList.add('hidden');
-                    nomeClienteFiadoInput.required = false;
-                }
-            });
-        });
-
         vendaForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const valor = parseFloat(valorVendaInput.value);
             const numeroComanda = parseInt(numeroComandaInput.value);
             const tipoPagamento = document.querySelector('input[name="tipoPagamento"]:checked').value;
 
-            if (isNaN(valor) || valor <= 0) {
-                alert('Por favor, insira um valor de venda válido.');
-                return;
-            }
-            if (isNaN(numeroComanda) || numeroComanda <= 0) {
-                alert('Por favor, insira um número de comanda válido.');
-                return;
-            }
-            if(comandasHoje.includes(numeroComanda)) {
-                alert(`A comanda de número ${numeroComanda} já foi registrada hoje.`);
-                return;
-            }
+            if (isNaN(valor) || valor <= 0) { alert('Por favor, insira um valor de venda válido.'); return; }
+            if (isNaN(numeroComanda) || numeroComanda <= 0) { alert('Por favor, insira um número de comanda válido.'); return; }
+            if(comandasHoje.includes(numeroComanda)) { alert(`A comanda de número ${numeroComanda} já foi registrada hoje.`); return; }
 
-            const novaVenda = {
-                comanda: numeroComanda,
-                valor,
-                tipo: tipoPagamento,
-                data: new Date().toISOString() // Adiciona um timestamp para identificador único
-            };
+            const novaVenda = { comanda: numeroComanda, valor, tipo: tipoPagamento, data: new Date().toISOString() };
 
             if (tipoPagamento === 'Fiado') {
                 const nomeCliente = nomeClienteFiadoInput.value.trim();
-                if (!nomeCliente) {
-                    alert('Por favor, insira o nome do cliente para a venda fiado.');
-                    return;
-                }
+                if (!nomeCliente) { alert('Por favor, insira o nome do cliente para a venda fiado.'); return; }
                 novaVenda.cliente = nomeCliente;
                 clientesFiado[nomeCliente] = (clientesFiado[nomeCliente] || 0) + valor;
             }
@@ -473,31 +557,26 @@
             numeroComandaInput.focus();
         });
         
+        tipoPagamentoRadios.forEach(radio => radio.addEventListener('change', () => {
+            campoClienteFiado.classList.toggle('hidden', radio.value !== 'Fiado');
+            nomeClienteFiadoInput.required = radio.value === 'Fiado';
+        }));
+
         listaClientesFiadoEl.addEventListener('click', (e) => {
             const target = e.target.closest('button');
             if (!target) return;
-
             const cliente = target.dataset.cliente;
 
             if (target.classList.contains('pagar-fiado-btn')) {
                 const inputValor = target.parentElement.querySelector('input');
                 const valorPago = parseFloat(inputValor.value);
-
-                if (isNaN(valorPago) || valorPago <= 0) {
-                    alert('Por favor, insira um valor de pagamento válido.');
-                    return;
-                }
-
+                if (isNaN(valorPago) || valorPago <= 0) { alert('Valor de pagamento inválido.'); return; }
                 clientesFiado[cliente] -= valorPago;
-                if (clientesFiado[cliente] < 0.01) { // Lida com imprecisões de float
-                    delete clientesFiado[cliente];
-                }
+                if (clientesFiado[cliente] < 0.01) delete clientesFiado[cliente];
                 salvarDados();
                 atualizarUI();
-            }
-
-            if (target.classList.contains('remover-cliente-btn')) {
-                if (confirm(`Tem certeza que deseja quitar a dívida e remover "${cliente}" da lista? Esta ação não pode ser desfeita.`)) {
+            } else if (target.classList.contains('remover-cliente-btn')) {
+                if (confirm(`Tem certeza que deseja quitar e remover "${cliente}"?`)) {
                     delete clientesFiado[cliente];
                     salvarDados();
                     atualizarUI();
@@ -505,7 +584,6 @@
             }
         });
 
-        // Evento para remover uma venda da lista do dia
         listaVendasHojeEl.addEventListener('click', (e) => {
             const target = e.target.closest('.remover-venda-btn');
             if (!target) return;
@@ -513,76 +591,58 @@
             const index = parseInt(target.dataset.vendaIndex);
             const vendaParaRemover = vendasHoje[index];
 
-            if (confirm(`Tem certeza que deseja remover a venda da comanda Nº ${vendaParaRemover.comanda}?`)) {
-                // Se for 'Fiado', ajusta a dívida do cliente
+            if (confirm(`Remover a venda da comanda Nº ${vendaParaRemover.comanda}?`)) {
                 if (vendaParaRemover.tipo === 'Fiado' && vendaParaRemover.cliente) {
                     const cliente = vendaParaRemover.cliente;
                     if (clientesFiado[cliente]) {
                         clientesFiado[cliente] -= vendaParaRemover.valor;
-                        if (clientesFiado[cliente] < 0.01) {
-                            delete clientesFiado[cliente];
-                        }
+                        if (clientesFiado[cliente] < 0.01) delete clientesFiado[cliente];
                     }
                 }
-
-                // Remove o número da comanda da lista de controle
                 comandasHoje = comandasHoje.filter(c => c !== vendaParaRemover.comanda);
-                
-                // Remove a venda
                 vendasHoje.splice(index, 1);
-
                 salvarDados();
                 atualizarUI();
             }
         });
+        
+        seletorData.addEventListener('change', (e) => mostrarRelatorio(e.target.value));
 
-        // Lógica de encerramento do dia
+        relatorioContainer.addEventListener('click', (e) => {
+            if (e.target.id === 'imprimirBtn') window.print();
+        });
+
         resetarDiaBtn.addEventListener('click', () => {
-            if (comandasHoje.length === 0) {
-                if(confirm('Nenhuma venda registrada. Deseja iniciar um novo dia mesmo assim?')) {
-                    resetarDadosDoDia();
-                }
+            if (vendasHoje.length === 0) {
+                if(confirm('Nenhuma venda registrada. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
                 return;
             }
-
             const ultimaComandaInformada = parseInt(ultimaComandaInput.value);
-
             if (isNaN(ultimaComandaInformada) || ultimaComandaInformada <= 0) {
-                alert('Por favor, informe o número da última comanda utilizada no dia.');
+                alert('Informe o número da última comanda do dia.');
                 ultimaComandaInput.focus();
                 return;
             }
-
             const maxComandaRegistrada = comandasHoje.length > 0 ? Math.max(...comandasHoje) : 0;
             if(ultimaComandaInformada < maxComandaRegistrada) {
-                alert(`O número da última comanda (${ultimaComandaInformada}) não pode ser menor que a maior comanda já registrada (${maxComandaRegistrada}).`);
+                alert(`A última comanda (${ultimaComandaInformada}) não pode ser menor que a maior já registrada (${maxComandaRegistrada}).`);
                 ultimaComandaInput.focus();
                 return;
             }
-
             const comandasFaltantes = [];
             for (let i = 1; i <= ultimaComandaInformada; i++) {
-                if (!comandasHoje.includes(i)) {
-                    comandasFaltantes.push(i);
-                }
+                if (!comandasHoje.includes(i)) comandasFaltantes.push(i);
             }
-
             if (comandasFaltantes.length > 0) {
-                senhaModalMensagem.textContent = `As seguintes comandas estão faltando: ${comandasFaltantes.join(', ')}. Para forçar o encerramento, digite a senha de administrador.`;
+                senhaModalMensagem.textContent = `Faltando comandas: ${comandasFaltantes.join(', ')}. Digite a senha para forçar o encerramento.`;
                 senhaModal.classList.remove('hidden');
                 senhaInput.focus();
             } else {
-                if(confirm('Todas as comandas estão em ordem. Deseja realmente encerrar o dia?')) {
-                    resetarDadosDoDia();
-                }
+                if(confirm('Todas as comandas estão em ordem. Deseja encerrar e arquivar o dia?')) resetarDadosDoDia();
             }
         });
         
-        cancelarSenhaBtn.addEventListener('click', () => {
-            senhaModal.classList.add('hidden');
-            senhaInput.value = '';
-        });
-
+        cancelarSenhaBtn.addEventListener('click', () => senhaModal.classList.add('hidden'));
         confirmarSenhaBtn.addEventListener('click', () => {
             if (senhaInput.value === SENHA_ADMIN) {
                 senhaModal.classList.add('hidden');
@@ -590,7 +650,6 @@
                 resetarDadosDoDia();
             } else {
                 alert('Senha incorreta!');
-                senhaInput.focus();
             }
         });
 
@@ -600,3 +659,4 @@
 
 </body>
 </html>
+
