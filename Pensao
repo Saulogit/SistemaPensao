@@ -720,9 +720,27 @@
                 inputValor.value = ''; // Limpa o input
             } else if (target.classList.contains('remover-cliente-btn')) {
                 if (confirm(`Tem certeza que deseja quitar e remover "${cliente}"?`)) {
+                    // *** INÍCIO DA CORREÇÃO ***
+                    
+                    // 1. Obter o valor total da dívida antes de apagar
+                    const valorQuitado = clientesFiado[cliente];
+                    
+                    // 2. Criar o registro de pagamento
+                    const novoPagamento = {
+                        cliente: cliente,
+                        valor: valorQuitado, // Registra o valor total quitado
+                        data: new Date().toISOString()
+                    };
+                    pagamentosHoje.push(novoPagamento); // Adiciona ao relatório do dia
+
+                    // 3. Agora sim, apagar o cliente da lista de devedores
                     delete clientesFiado[cliente];
+                    
+                    // 4. Salvar e atualizar a tela
                     salvarDados();
                     atualizarUI();
+                    
+                    // *** FIM DA CORREÇÃO ***
                 }
             }
         });
