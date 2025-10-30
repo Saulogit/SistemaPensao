@@ -255,7 +255,7 @@
                         <p class="text-center text-gray-500">Selecione uma data para começar.</p>
                     </div>
                     
-                    <!-- NOVOS BOTÕES DE BACKUP -->
+                    <!-- BOTÕES DE BACKUP E LIMPEZA -->
                     <div class="mt-6 pt-6 border-t border-dashed space-y-3">
                         <h3 class="text-lg font-bold text-gray-700">Backup e Restauração</h3>
                         <p class="text-sm text-gray-500">Salve seus dados (histórico e fiado) em um arquivo seguro no seu computador.</p>
@@ -268,6 +268,12 @@
                             Importar Backup
                         </button>
                         <input type="file" id="importarDadosInput" class="hidden" accept="application/json">
+                        
+                        <!-- NOVO BOTÃO PARA LIMPAR HISTÓRICO -->
+                        <button id="limparHistoricoBtn" class="btn btn-danger w-full">
+                            <i data-lucide="trash-2"></i>
+                            Apagar Histórico Antigo (Requer Senha)
+                        </button>
                     </div>
                 </div>
 
@@ -304,7 +310,7 @@
                 </div>
                 <div class="items-center px-4 py-3 gap-2 flex">
                     <button id="cancelarSenhaBtn" class="btn bg-gray-200 text-gray-800 hover:bg-gray-300 w-full">Cancelar</button>
-                    <button id="confirmarSenhaBtn" class="btn btn-danger w-full">Confirmar Encerramento</button>
+                    <button id="confirmarSenhaBtn" class="btn btn-danger w-full">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -346,6 +352,7 @@
         const exportarDadosBtn = document.getElementById('exportarDadosBtn');
         const importarBtn = document.getElementById('importarBtn');
         const importarDadosInput = document.getElementById('importarDadosInput');
+        const limparHistoricoBtn = document.getElementById('limparHistoricoBtn'); // Novo botão
 
 
         // Modal de Senha
@@ -357,12 +364,14 @@
 
         // --- LÓGICA DE DADOS ---
         const SENHA_ADMIN = 'admin123';
+        let acaoPendenteComSenha = null; // Armazena a função a ser executada
 
         // Carrega os dados do localStorage ou inicializa com valores padrão
         let vendasHoje = JSON.parse(localStorage.getItem('vendasHoje')) || [];
         let clientesFiado = JSON.parse(localStorage.getItem('clientesFiado')) || {};
         let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || [];
         let historicoVendas = JSON.parse(localStorage.getItem('historicoVendas')) || {};
+        let pagamentosHoje = JSON.parse(localStorage.getItem('pagamentosHoje')) || []; // NOVO: Armazena pagamentos de fiado do dia
 
         // Funções de formatação e salvamento
         const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -373,10 +382,11 @@
             localStorage.setItem('clientesFiado', JSON.stringify(clientesFiado));
             localStorage.setItem('comandasHoje', JSON.stringify(comandasHoje));
             localStorage.setItem('historicoVendas', JSON.stringify(historicoVendas));
+            localStorage.setItem('pagamentosHoje', JSON.stringify(pagamentosHoje)); // NOVO: Salva pagamentos do dia
         };
         
         const arquivarVendasDoDia = () => {
-            if (vendasHoje.length === 0) return;
+            if (vendasHoje.length === 0 && pagamentosHoje.length === 0) return; // Só arquiva se houver movimento
             
             const hoje = new Date();
             const chaveData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
@@ -392,7 +402,8 @@
                 data: hoje.toISOString(),
                 resumo: { ...totais, total: totalVendas },
                 vendas: [...vendasHoje],
-                ultimaComanda: parseInt(ultimaComandaInput.value) || Math.max(...comandasHoje)
+                pagamentos: [...pagamentosHoje], // NOVO: Salva os pagamentos no histórico
+                ultimaComanda: parseInt(ultimaComandaInput.value) || (comandasHoje.length > 0 ? Math.max(...comandasHoje) : 0)
             };
         };
 
@@ -400,11 +411,25 @@
             arquivarVendasDoDia();
             vendasHoje = [];
             comandasHoje = [];
+            pagamentosHoje = []; // NOVO: Limpa os pagamentos do dia
             ultimaComandaInput.value = '';
             salvarDados();
             atualizarUI();
             alert('Dia encerrado e arquivado com sucesso! Novo dia iniciado.');
         }
+
+        // Nova função para limpar o histórico
+        const limparHistoricoAntigo = () => {
+            if (Object.keys(historicoVendas).length === 0) {
+                alert('O histórico já está vazio.');
+                return;
+            }
+            historicoVendas = {};
+            salvarDados();
+            atualizarUI();
+            alert('Histórico de vendas antigo foi permanentemente apagado! (A lista de fiado foi mantida).');
+        }
+
 
         // --- LÓGICA DE RENDERIZAÇÃO ---
         
@@ -514,7 +539,7 @@
             }
 
             const relatorio = historicoVendas[dataKey];
-            const { resumo, vendas } = relatorio;
+            const { resumo, vendas, pagamentos } = relatorio; // Pagamentos adicionado
             
             let vendasHtml = vendas.sort((a,b) => a.comanda - b.comanda).map(venda => `
                 <li class="flex justify-between items-center p-2 even:bg-gray-50">
@@ -523,21 +548,58 @@
                     <span class="text-sm text-gray-600">${venda.tipo} ${venda.cliente ? `(${venda.cliente})` : ''}</span>
                 </li>
             `).join('');
+            if (vendas.length === 0) {
+                vendasHtml = '<li class="text-center text-gray-500 p-2">Nenhuma venda registrada.</li>';
+            }
 
+            // NOVO: Gerar HTML para pagamentos
+            let pagamentosHtml = '';
+            let totalPagamentos = 0;
+            if (pagamentos && pagamentos.length > 0) {
+                pagamentosHtml = pagamentos.map(pag => {
+                    totalPagamentos += pag.valor;
+                    return `
+                    <li class="flex justify-between items-center p-2 even:bg-gray-50">
+                        <span>Cliente: <strong>${pag.cliente}</strong></span>
+                        <span class="font-semibold text-green-600">${formatarMoeda(pag.valor)}</span>
+                    </li>
+                `;
+                }).join('');
+            } else {
+                pagamentosHtml = '<li class="text-center text-gray-500 p-2">Nenhum pagamento recebido.</li>';
+            }
+
+            // NOVO: HTML do Relatório atualizado
             relatorioContainer.innerHTML = `
                 <div class="space-y-3">
                     <h3 class="text-xl font-bold text-gray-800">Relatório de ${formatarData(relatorio.data)}</h3>
+                    
+                    <!-- Resumo Geral de Vendas -->
                     <div class="space-y-2 border-t pt-2">
-                        <div class="flex justify-between font-bold text-blue-600"><p>Venda Total:</p><p>${formatarMoeda(resumo.total)}</p></div>
+                        <div class="flex justify-between font-bold text-blue-600"><p>Venda Total (Bruta):</p><p>${formatarMoeda(resumo.total)}</p></div>
                         <div class="flex justify-between text-sm"><p>Dinheiro:</p><p>${formatarMoeda(resumo.Dinheiro)}</p></div>
                         <div class="flex justify-between text-sm"><p>Cartão:</p><p>${formatarMoeda(resumo.Cartão)}</p></div>
                         <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(resumo.Pix)}</p></div>
-                        <div class="flex justify-between text-sm text-red-600"><p>Fiado:</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
+                        <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
                     </div>
+
+                    <!-- NOVO: Resumo de Pagamentos -->
+                    <div class="space-y-2 border-t pt-2">
+                        <div class="flex justify-between font-bold text-green-600"><p>Pagamentos de Fiado Recebidos:</p><p>${formatarMoeda(totalPagamentos)}</p></div>
+                    </div>
+
+                    <!-- Detalhes Vendas -->
                     <div class="border-t pt-2">
                         <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
-                        <ul class="space-y-1 max-h-60 overflow-y-auto pr-2">${vendasHtml}</ul>
+                        <ul class="space-y-1 max-h-40 overflow-y-auto pr-2">${vendasHtml}</ul>
                     </div>
+
+                    <!-- NOVO: Detalhes Pagamentos -->
+                    <div class="border-t pt-2">
+                        <h4 class="font-semibold mb-2">Detalhes dos Pagamentos (${pagamentos ? pagamentos.length : 0} registros):</h4>
+                        <ul class="space-y-1 max-h-40 overflow-y-auto pr-2">${pagamentosHtml}</ul>
+                    </div>
+
                     <button id="imprimirBtn" class="btn btn-success w-full mt-4 no-print"><i data-lucide="printer"></i>Imprimir Relatório</button>
                 </div>
             `;
@@ -598,10 +660,21 @@
                 const inputValor = target.parentElement.querySelector('input');
                 const valorPago = parseFloat(inputValor.value);
                 if (isNaN(valorPago) || valorPago <= 0) { alert('Valor de pagamento inválido.'); return; }
+                
+                // NOVO: Criar o registro de pagamento
+                const novoPagamento = {
+                    cliente: cliente,
+                    valor: valorPago,
+                    data: new Date().toISOString()
+                };
+                pagamentosHoje.push(novoPagamento);
+
                 clientesFiado[cliente] -= valorPago;
                 if (clientesFiado[cliente] < 0.01) delete clientesFiado[cliente];
-                salvarDados();
+                
+                salvarDados(); // Isso agora salva o pagamentosHoje também
                 atualizarUI();
+                inputValor.value = ''; // Limpa o input
             } else if (target.classList.contains('remover-cliente-btn')) {
                 if (confirm(`Tem certeza que deseja quitar e remover "${cliente}"?`)) {
                     delete clientesFiado[cliente];
@@ -640,28 +713,32 @@
         });
 
         resetarDiaBtn.addEventListener('click', () => {
-            if (vendasHoje.length === 0) {
-                if(confirm('Nenhuma venda registrada. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
+            if (vendasHoje.length === 0 && pagamentosHoje.length === 0) {
+                if(confirm('Nenhuma venda ou pagamento registrado. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
                 return;
             }
             const ultimaComandaInformada = parseInt(ultimaComandaInput.value);
-            if (isNaN(ultimaComandaInformada) || ultimaComandaInformada <= 0) {
+            if (vendasHoje.length > 0 && (isNaN(ultimaComandaInformada) || ultimaComandaInformada <= 0)) {
                 alert('Informe o número da última comanda do dia.');
                 ultimaComandaInput.focus();
                 return;
             }
+
             const maxComandaRegistrada = comandasHoje.length > 0 ? Math.max(...comandasHoje) : 0;
             if(ultimaComandaInformada < maxComandaRegistrada) {
                 alert(`A última comanda (${ultimaComandaInformada}) não pode ser menor que a maior já registrada (${maxComandaRegistrada}).`);
                 ultimaComandaInput.focus();
                 return;
             }
+
             const comandasFaltantes = [];
             for (let i = 1; i <= ultimaComandaInformada; i++) {
                 if (!comandasHoje.includes(i)) comandasFaltantes.push(i);
             }
+
             if (comandasFaltantes.length > 0) {
                 senhaModalMensagem.textContent = `Faltando comandas: ${comandasFaltantes.join(', ')}. Digite a senha para forçar o encerramento.`;
+                acaoPendenteComSenha = resetarDadosDoDia; // Define a ação pendente
                 senhaModal.classList.remove('hidden');
                 senhaInput.focus();
             } else {
@@ -669,18 +746,26 @@
             }
         });
         
-        cancelarSenhaBtn.addEventListener('click', () => senhaModal.classList.add('hidden'));
+        cancelarSenhaBtn.addEventListener('click', () => {
+            senhaModal.classList.add('hidden');
+            acaoPendenteComSenha = null; // Limpa a ação ao cancelar
+            senhaInput.value = ''; // Limpa o campo da senha
+        });
+
         confirmarSenhaBtn.addEventListener('click', () => {
             if (senhaInput.value === SENHA_ADMIN) {
                 senhaModal.classList.add('hidden');
                 senhaInput.value = '';
-                resetarDadosDoDia();
+                if (typeof acaoPendenteComSenha === 'function') {
+                    acaoPendenteComSenha(); // Executa a ação pendente (seja resetar o dia ou limpar o histórico)
+                }
+                acaoPendenteComSenha = null; // Limpa a ação
             } else {
                 alert('Senha incorreta!');
             }
         });
         
-        // --- NOVOS EVENTOS DE BACKUP ---
+        // --- EVENTOS DE BACKUP E LIMPEZA ---
         
         exportarDadosBtn.addEventListener('click', () => {
             const backupData = {
@@ -744,6 +829,14 @@
                 }
             };
             reader.readAsText(file);
+        });
+
+        // Novo evento para o botão de limpar histórico
+        limparHistoricoBtn.addEventListener('click', () => {
+            senhaModalMensagem.innerHTML = '<strong>Atenção!</strong> Esta ação vai apagar <strong>PERMANENTEMENTE</strong> todo o histórico de relatórios salvos.<br><br>Recomenda-se exportar um backup primeiro. Digite a senha para confirmar.';
+            acaoPendenteComSenha = limparHistoricoAntigo; // Define a ação pendente
+            senhaModal.classList.remove('hidden');
+            senhaInput.focus();
         });
 
         // Inicialização da aplicação
