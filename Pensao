@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão - Pensão</title>
+    <!-- Ícone da Aba (Favicon) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
     <!-- Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons para ícones -->
@@ -55,6 +57,13 @@
         }
         .btn-danger:hover {
             background-color: #b91c1c;
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
         }
         .btn-outline-danger {
             background-color: transparent;
@@ -195,7 +204,6 @@
                         </div>
                     </div>
                     
-                    <!-- FIX: Added back the missing element for registered commanda numbers -->
                     <div class="mt-4 pt-4 border-t">
                         <h4 class="font-semibold text-gray-600 mb-2">Comandas Registradas Hoje:</h4>
                         <p id="comandasRegistradas" class="text-sm text-gray-500 break-words leading-relaxed">Nenhuma comanda registrada.</p>
@@ -231,7 +239,7 @@
                 </div>
 
                 <!-- Card de Histórico e Relatórios -->
-                <div class="card h-fit">
+                <div class="card h-fit no-print">
                     <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                         <i data-lucide="history"></i>
                         Histórico e Relatórios
@@ -245,6 +253,21 @@
                     <div id="relatorioContainer" class="mt-4 border-t pt-4">
                         <!-- Relatório do dia selecionado será exibido aqui -->
                         <p class="text-center text-gray-500">Selecione uma data para começar.</p>
+                    </div>
+                    
+                    <!-- NOVOS BOTÕES DE BACKUP -->
+                    <div class="mt-6 pt-6 border-t border-dashed space-y-3">
+                        <h3 class="text-lg font-bold text-gray-700">Backup e Restauração</h3>
+                        <p class="text-sm text-gray-500">Salve seus dados (histórico e fiado) em um arquivo seguro no seu computador.</p>
+                        <button id="exportarDadosBtn" class="btn btn-success w-full">
+                            <i data-lucide="download"></i>
+                            Exportar Backup Completo
+                        </button>
+                        <button id="importarBtn" class="btn btn-secondary w-full">
+                            <i data-lucide="upload"></i>
+                            Importar Backup
+                        </button>
+                        <input type="file" id="importarDadosInput" class="hidden" accept="application/json">
                     </div>
                 </div>
 
@@ -317,9 +340,13 @@
         const comandasRegistradasEl = document.getElementById('comandasRegistradas');
 
 
-        // Seção de Histórico
+        // Seção de Histórico e Backup
         const seletorData = document.getElementById('seletorData');
         const relatorioContainer = document.getElementById('relatorioContainer');
+        const exportarDadosBtn = document.getElementById('exportarDadosBtn');
+        const importarBtn = document.getElementById('importarBtn');
+        const importarDadosInput = document.getElementById('importarDadosInput');
+
 
         // Modal de Senha
         const senhaModal = document.getElementById('senhaModal');
@@ -651,6 +678,72 @@
             } else {
                 alert('Senha incorreta!');
             }
+        });
+        
+        // --- NOVOS EVENTOS DE BACKUP ---
+        
+        exportarDadosBtn.addEventListener('click', () => {
+            const backupData = {
+                historico: historicoVendas,
+                fiado: clientesFiado
+            };
+            
+            if (Object.keys(historicoVendas).length === 0 && Object.keys(clientesFiado).length === 0) {
+                alert('Não há dados para exportar.');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'backup_pensao_completo.json';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            alert('Backup exportado com sucesso!');
+        });
+        
+        importarBtn.addEventListener('click', () => {
+            // Aciona o input de arquivo oculto
+            importarDadosInput.click();
+        });
+
+        importarDadosInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const dadosImportados = JSON.parse(event.target.result);
+                    
+                    // Validação simples para ver se o arquivo parece correto
+                    if (dadosImportados && typeof dadosImportados === 'object' && dadosImportados.hasOwnProperty('historico') && dadosImportados.hasOwnProperty('fiado')) {
+                        if (confirm('Deseja substituir o histórico e a lista de fiado por este backup? (Os dados do dia atual não serão afetados)')) {
+                            historicoVendas = dadosImportados.historico || {};
+                            clientesFiado = dadosImportados.fiado || {};
+                            salvarDados();
+                            atualizarUI();
+                            alert('Backup importado com sucesso!');
+                        }
+                    } else {
+                        alert('Arquivo de backup inválido ou corrompido.');
+                    }
+                } catch (error) {
+                    console.error('Erro ao importar backup:', error);
+                    alert('Ocorreu um erro ao ler o arquivo de backup.');
+                } finally {
+                    // Reseta o input para permitir importar o mesmo arquivo novamente
+                    e.target.value = null;
+                }
+            };
+            reader.readAsText(file);
         });
 
         // Inicialização da aplicação
