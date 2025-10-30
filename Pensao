@@ -252,6 +252,21 @@
                     </div>
                 </div>
 
+                <!-- Card de Gestão de Fiado -->
+                <div class="card h-fit">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <i data-lucide="users"></i>
+                        Gestão de Fiado
+                    </h2>
+                    <div class="flex justify-between items-center bg-red-100 p-3 rounded-lg mb-4">
+                        <span class="font-bold text-red-700">VALOR TOTAL EM ABERTO:</span>
+                        <span id="totalFiadoGeral" class="text-xl font-bold text-red-700">R$ 0,00</span>
+                    </div>
+                    <div id="listaClientesFiado" class="space-y-4">
+                        <p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>
+                    </div>
+                </div>
+
                 <!-- Card de Histórico e Relatórios -->
                 <div class="card h-fit no-print">
                     <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
@@ -288,21 +303,6 @@
                             <i data-lucide="trash-2"></i>
                             Apagar Histórico Antigo (Requer Senha)
                         </button>
-                    </div>
-                </div>
-
-                <!-- Card de Gestão de Fiado -->
-                <div class="card h-fit">
-                    <h2 class="text-2xl font-bold text-gray-700 mb-2 flex items-center gap-2">
-                        <i data-lucide="users"></i>
-                        Gestão de Fiado
-                    </h2>
-                    <div class="flex justify-between items-center bg-red-100 p-3 rounded-lg mb-4">
-                        <span class="font-bold text-red-700">VALOR TOTAL EM ABERTO:</span>
-                        <span id="totalFiadoGeral" class="text-xl font-bold text-red-700">R$ 0,00</span>
-                    </div>
-                    <div id="listaClientesFiado" class="space-y-4">
-                        <p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>
                     </div>
                 </div>
             </div>
