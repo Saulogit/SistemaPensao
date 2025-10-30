@@ -129,13 +129,21 @@
                         Registrar Nova Venda
                     </h2>
                     <form id="vendaForm" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
+                        <!-- CAMPOS DA COMANDA ATUALIZADOS -->
+                        <div class="grid grid-cols-3 gap-4">
                             <div>
-                                <label for="numeroComanda" class="block text-sm font-medium text-gray-600 mb-1">Nº da Comanda</label>
+                                <label for="tipoComanda" class="block text-sm font-medium text-gray-600 mb-1">Tipo</label>
+                                <select id="tipoComanda" class="input-field">
+                                    <option value="A">Amarela (A)</option>
+                                    <option value="B">Branca (B)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="numeroComanda" class="block text-sm font-medium text-gray-600 mb-1">Nº</label>
                                 <input type="number" id="numeroComanda" class="input-field" placeholder="Ex: 15" required>
                             </div>
                             <div>
-                                <label for="valorVenda" class="block text-sm font-medium text-gray-600 mb-1">Valor da Venda (R$)</label>
+                                <label for="valorVenda" class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
                                 <input type="number" id="valorVenda" step="0.01" class="input-field" placeholder="Ex: 25.50" required>
                             </div>
                         </div>
@@ -209,13 +217,19 @@
                         <p id="comandasRegistradas" class="text-sm text-gray-500 break-words leading-relaxed">Nenhuma comanda registrada.</p>
                     </div>
 
-                    <!-- Seção de Encerramento de Dia -->
+                    <!-- Seção de Encerramento de Dia ATUALIZADA -->
                     <div class="mt-6 pt-6 border-t border-dashed">
                          <h3 class="text-lg font-bold text-gray-700 mb-3">Encerrar Expediente</h3>
-                         <div>
-                            <label for="ultimaComandaInput" class="block text-sm font-medium text-gray-600 mb-1">Informe o número da última comanda:</label>
-                            <input type="number" id="ultimaComandaInput" class="input-field" placeholder="Ex: 15">
-                        </div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div>
+                               <label for="ultimaComandaA" class="block text-sm font-medium text-gray-600 mb-1">Última Amarela (A)</label>
+                               <input type="number" id="ultimaComandaA" class="input-field" placeholder="Ex: 10">
+                           </div>
+                            <div>
+                               <label for="ultimaComandaB" class="block text-sm font-medium text-gray-600 mb-1">Última Branca (B)</label>
+                               <input type="number" id="ultimaComandaB" class="input-field" placeholder="Ex: 25">
+                           </div>
+                       </div>
                         <button id="resetarDiaBtn" class="btn btn-danger w-full mt-3">
                             <i data-lucide="power-off"></i>
                             Verificar e Encerrar Dia
@@ -323,12 +337,14 @@
         // Elementos da UI
         const vendaForm = document.getElementById('vendaForm');
         const valorVendaInput = document.getElementById('valorVenda');
+        const tipoComandaSelect = document.getElementById('tipoComanda'); // NOVO
         const numeroComandaInput = document.getElementById('numeroComanda');
         const tipoPagamentoRadios = document.querySelectorAll('input[name="tipoPagamento"]');
         const campoClienteFiado = document.getElementById('campoClienteFiado');
         const nomeClienteFiadoInput = document.getElementById('nomeClienteFiado');
         const resetarDiaBtn = document.getElementById('resetarDiaBtn');
-        const ultimaComandaInput = document.getElementById('ultimaComandaInput');
+        const ultimaComandaAInput = document.getElementById('ultimaComandaA'); // NOVO
+        const ultimaComandaBInput = document.getElementById('ultimaComandaB'); // NOVO
         
         // Displays de resumo
         const totalVendasHojeEl = document.getElementById('totalVendasHoje');
@@ -369,7 +385,7 @@
         // Carrega os dados do localStorage ou inicializa com valores padrão
         let vendasHoje = JSON.parse(localStorage.getItem('vendasHoje')) || [];
         let clientesFiado = JSON.parse(localStorage.getItem('clientesFiado')) || {};
-        let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || [];
+        let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || []; // Agora armazena "A1", "B1", etc.
         let historicoVendas = JSON.parse(localStorage.getItem('historicoVendas')) || {};
         let pagamentosHoje = JSON.parse(localStorage.getItem('pagamentosHoje')) || []; // NOVO: Armazena pagamentos de fiado do dia
 
@@ -403,7 +419,10 @@
                 resumo: { ...totais, total: totalVendas },
                 vendas: [...vendasHoje],
                 pagamentos: [...pagamentosHoje], // NOVO: Salva os pagamentos no histórico
-                ultimaComanda: parseInt(ultimaComandaInput.value) || (comandasHoje.length > 0 ? Math.max(...comandasHoje) : 0)
+                ultimaComanda: { // ATUALIZADO
+                    A: parseInt(ultimaComandaAInput.value) || 0,
+                    B: parseInt(ultimaComandaBInput.value) || 0
+                }
             };
         };
 
@@ -412,7 +431,8 @@
             vendasHoje = [];
             comandasHoje = [];
             pagamentosHoje = []; // NOVO: Limpa os pagamentos do dia
-            ultimaComandaInput.value = '';
+            ultimaComandaAInput.value = ''; // ATUALIZADO
+            ultimaComandaBInput.value = ''; // ATUALIZADO
             salvarDados();
             atualizarUI();
             alert('Dia encerrado e arquivado com sucesso! Novo dia iniciado.');
@@ -429,6 +449,22 @@
             atualizarUI();
             alert('Histórico de vendas antigo foi permanentemente apagado! (A lista de fiado foi mantida).');
         }
+
+        // NOVO: Helper para ordenar comandas A/B
+        const ordenarComandas = (a, b) => {
+            const tipoA = a.charAt(0);
+            const tipoB = b.charAt(0);
+            const numA = parseInt(a.substring(1));
+            const numB = parseInt(b.substring(1));
+            
+            if (tipoA < tipoB) return -1;
+            if (tipoA > tipoB) return 1;
+            return numA - numB;
+        };
+
+        const ordenarVendasPorComanda = (a, b) => {
+            return ordenarComandas(a.comanda, b.comanda);
+        };
 
 
         // --- LÓGICA DE RENDERIZAÇÃO ---
@@ -482,14 +518,16 @@
 
         const renderizarVendasDoDia = () => {
             listaVendasHojeEl.innerHTML = '';
-            comandasRegistradasEl.textContent = comandasHoje.length > 0 ? [...comandasHoje].sort((a, b) => a - b).join(', ') : 'Nenhuma comanda registrada.';
+            // ATUALIZADO: Ordenação de comandas A/B
+            comandasRegistradasEl.textContent = comandasHoje.length > 0 ? [...comandasHoje].sort(ordenarComandas).join(', ') : 'Nenhuma comanda registrada.';
 
             if (vendasHoje.length === 0) {
                 listaVendasHojeEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>';
                 return;
             }
-
-            [...vendasHoje].sort((a, b) => a.comanda - b.comanda).forEach(venda => {
+            
+            // ATUALIZADO: Ordenação de comandas A/B
+            [...vendasHoje].sort(ordenarVendasPorComanda).forEach(venda => {
                 const originalIndex = vendasHoje.findIndex(v => v.data === venda.data && v.comanda === venda.comanda);
                 const vendaDiv = document.createElement('div');
                 vendaDiv.className = 'flex justify-between items-center p-2 rounded-md even:bg-gray-50';
@@ -504,6 +542,7 @@
 
                 vendaDiv.innerHTML = `
                     <div class="flex items-center gap-3">
+                        <!-- Exibe A1, B1, etc -->
                         <span class="font-bold text-gray-700 w-10 text-center">${venda.comanda}</span>
                         <span class="font-semibold text-gray-800">${formatarMoeda(venda.valor)}</span>
                         <span class="flex items-center gap-1 text-sm text-gray-500">${tipoPagamentoIcon} ${venda.tipo}</span>
@@ -541,7 +580,8 @@
             const relatorio = historicoVendas[dataKey];
             const { resumo, vendas, pagamentos } = relatorio; // Pagamentos adicionado
             
-            let vendasHtml = vendas.sort((a,b) => a.comanda - b.comanda).map(venda => `
+            // ATUALIZADO: Ordenação de comandas A/B
+            let vendasHtml = vendas.sort(ordenarVendasPorComanda).map(venda => `
                 <li class="flex justify-between items-center p-2 even:bg-gray-50">
                     <span>Comanda <strong>#${venda.comanda}</strong></span>
                     <span class="font-semibold">${formatarMoeda(venda.valor)}</span>
@@ -619,14 +659,17 @@
         vendaForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const valor = parseFloat(valorVendaInput.value);
-            const numeroComanda = parseInt(numeroComandaInput.value);
+            const tipoComanda = tipoComandaSelect.value; // NOVO
+            const numeroComanda = parseInt(numeroComandaInput.value); // NOVO
             const tipoPagamento = document.querySelector('input[name="tipoPagamento"]:checked').value;
+            
+            const comandaId = tipoComanda + numeroComanda; // NOVO: Cria "A1", "B1" etc.
 
             if (isNaN(valor) || valor <= 0) { alert('Por favor, insira um valor de venda válido.'); return; }
             if (isNaN(numeroComanda) || numeroComanda <= 0) { alert('Por favor, insira um número de comanda válido.'); return; }
-            if(comandasHoje.includes(numeroComanda)) { alert(`A comanda de número ${numeroComanda} já foi registrada hoje.`); return; }
+            if(comandasHoje.includes(comandaId)) { alert(`A comanda de número ${comandaId} já foi registrada hoje.`); return; } // ATUALIZADO
 
-            const novaVenda = { comanda: numeroComanda, valor, tipo: tipoPagamento, data: new Date().toISOString() };
+            const novaVenda = { comanda: comandaId, valor, tipo: tipoPagamento, data: new Date().toISOString() }; // ATUALIZADO
 
             if (tipoPagamento === 'Fiado') {
                 const nomeCliente = nomeClienteFiadoInput.value.trim();
@@ -636,7 +679,7 @@
             }
             
             vendasHoje.push(novaVenda);
-            comandasHoje.push(numeroComanda);
+            comandasHoje.push(comandaId); // ATUALIZADO
             salvarDados();
             atualizarUI();
 
@@ -699,7 +742,7 @@
                         if (clientesFiado[cliente] < 0.01) delete clientesFiado[cliente];
                     }
                 }
-                comandasHoje = comandasHoje.filter(c => c !== vendaParaRemover.comanda);
+                comandasHoje = comandasHoje.filter(c => c !== vendaParaRemover.comanda); // Lógica continua correta
                 vendasHoje.splice(index, 1);
                 salvarDados();
                 atualizarUI();
@@ -712,29 +755,59 @@
             if (e.target.id === 'imprimirBtn') window.print();
         });
 
+        // ATUALIZADO: Lógica de encerramento de dia
         resetarDiaBtn.addEventListener('click', () => {
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) {
                 if(confirm('Nenhuma venda ou pagamento registrado. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
                 return;
             }
-            const ultimaComandaInformada = parseInt(ultimaComandaInput.value);
-            if (vendasHoje.length > 0 && (isNaN(ultimaComandaInformada) || ultimaComandaInformada <= 0)) {
-                alert('Informe o número da última comanda do dia.');
-                ultimaComandaInput.focus();
+            
+            const ultimaA = parseInt(ultimaComandaAInput.value) || 0;
+            const ultimaB = parseInt(ultimaComandaBInput.value) || 0;
+
+            // Separa os números das comandas A e B
+            const comandasA = comandasHoje.filter(c => c.startsWith('A')).map(c => parseInt(c.substring(1)));
+            const comandasB = comandasHoje.filter(c => c.startsWith('B')).map(c => parseInt(c.substring(1)));
+
+            const maxA = comandasA.length > 0 ? Math.max(...comandasA) : 0;
+            const maxB = comandasB.length > 0 ? Math.max(...comandasB) : 0;
+
+            // Validação: Só pede "última A" se A foi usada. Só pede "última B" se B foi usada.
+            if (comandasA.length > 0 && ultimaA === 0) {
+                 alert('Você registrou comandas Amarelas (A). Por favor, informe o número da última comanda Amarela.');
+                 ultimaComandaAInput.focus();
+                 return;
+            }
+             if (comandasB.length > 0 && ultimaB === 0) {
+                 alert('Você registrou comandas Brancas (B). Por favor, informe o número da última comanda Branca.');
+                 ultimaComandaBInput.focus();
+                 return;
+            }
+            
+            // Validação: Última informada não pode ser menor que a maior registrada
+            if (ultimaA < maxA) {
+                alert(`A última comanda Amarela (${ultimaA}) não pode ser menor que a maior já registrada (A${maxA}).`);
+                ultimaComandaAInput.focus();
+                return;
+            }
+            if (ultimaB < maxB) {
+                alert(`A última comanda Branca (${ultimaB}) não pode ser menor que a maior já registrada (B${maxB}).`);
+                ultimaComandaBInput.focus();
                 return;
             }
 
-            const maxComandaRegistrada = comandasHoje.length > 0 ? Math.max(...comandasHoje) : 0;
-            if(ultimaComandaInformada < maxComandaRegistrada) {
-                alert(`A última comanda (${ultimaComandaInformada}) não pode ser menor que a maior já registrada (${maxComandaRegistrada}).`);
-                ultimaComandaInput.focus();
-                return;
+            // Validação: Procura por comandas faltantes em cada série
+            const faltantesA = [];
+            for (let i = 1; i <= ultimaA; i++) {
+                if (!comandasA.includes(i)) faltantesA.push(`A${i}`);
+            }
+            
+            const faltantesB = [];
+            for (let i = 1; i <= ultimaB; i++) {
+                if (!comandasB.includes(i)) faltantesB.push(`B${i}`);
             }
 
-            const comandasFaltantes = [];
-            for (let i = 1; i <= ultimaComandaInformada; i++) {
-                if (!comandasHoje.includes(i)) comandasFaltantes.push(i);
-            }
+            const comandasFaltantes = [...faltantesA, ...faltantesB];
 
             if (comandasFaltantes.length > 0) {
                 senhaModalMensagem.textContent = `Faltando comandas: ${comandasFaltantes.join(', ')}. Digite a senha para forçar o encerramento.`;
