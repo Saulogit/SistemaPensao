@@ -353,7 +353,26 @@
                             Histórico e Relatórios
                         </h2>
                         
-                        <div>
+                        <!-- NOVO: Seção de Relatório Acumulado -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">Relatório por Período</h3>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <label for="dataInicio" class="block text-sm font-medium text-gray-600 mb-1">De:</label>
+                                    <input type="date" id="dataInicio" class="input-field text-sm">
+                                </div>
+                                <div>
+                                    <label for="dataFim" class="block text-sm font-medium text-gray-600 mb-1">Até:</label>
+                                    <input type="date" id="dataFim" class="input-field text-sm">
+                                </div>
+                            </div>
+                            <button id="calcularPeriodoBtn" class="btn btn-primary w-full"><i data-lucide="calculator"></i> Calcular Período</button>
+                        </div>
+                        <div id="relatorioAcumuladoContainer" class="mb-4"></div>
+                        <!-- Fim da Seção de Relatório Acumulado -->
+
+
+                        <div class="border-t pt-4">
                             <label for="seletorData" class="block text-sm font-medium text-gray-600 mb-1">Relatório Diário (Selecione uma data):</label>
                             <select id="seletorData" class="input-field">
                                 <option>Nenhum relatório salvo</option>
@@ -466,6 +485,12 @@
         const importarDadosInput = document.getElementById('importarDadosInput');
         const limparHistoricoBtn = document.getElementById('limparHistoricoBtn'); 
 
+        // NOVO: Relatório Acumulado
+        const dataInicioInput = document.getElementById('dataInicio');
+        const dataFimInput = document.getElementById('dataFim');
+        const calcularPeriodoBtn = document.getElementById('calcularPeriodoBtn');
+        const relatorioAcumuladoContainer = document.getElementById('relatorioAcumuladoContainer');
+
 
         // Modal de Senha
         const senhaModal = document.getElementById('senhaModal');
@@ -545,6 +570,7 @@
         // Funções de formatação e salvamento
         const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatarData = (isoString) => new Date(isoString).toLocaleDateString('pt-BR');
+        const formatarDataInput = (isoString) => isoString.split('T')[0]; // Formato YYYY-MM-DD
         const formatarDataHora = (isoString) => new Date(isoString).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const formatarHora = (isoString) => new Date(isoString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         
@@ -584,6 +610,7 @@
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) return; // Não arquiva dia vazio
             
             const hoje = new Date();
+            // Garante que a chaveData não tenha problemas com fuso horário
             const chaveData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
             
             const totais = vendasHoje.reduce((acc, venda) => {
@@ -786,11 +813,19 @@
 
         const renderizarSeletorHistorico = () => {
             seletorData.innerHTML = '';
+            // Limpa containers de relatório
+            relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
+            relatorioAcumuladoContainer.innerHTML = '';
+            
             const datasSalvas = Object.keys(historicoVendas).sort().reverse();
 
             if (datasSalvas.length === 0) {
                 seletorData.innerHTML = '<option>Nenhum relatório salvo</option>';
-                relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
+                // Define as datas padrão para o relatório acumulado
+                const hoje = new Date();
+                const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                dataInicioInput.value = formatarDataInput(primeiroDiaMes.toISOString());
+                dataFimInput.value = formatarDataInput(hoje.toISOString());
                 return;
             }
 
@@ -801,10 +836,17 @@
                 option.textContent = formatarData(historicoVendas[dataKey].data);
                 seletorData.appendChild(option);
             });
+            
+            // Define datas padrão para o seletor de período
+            dataInicioInput.value = datasSalvas.length > 0 ? datasSalvas[datasSalvas.length - 1] : formatarDataInput(new Date().toISOString());
+            dataFimInput.value = datasSalvas.length > 0 ? datasSalvas[0] : formatarDataInput(new Date().toISOString());
         };
 
         // Função para exibir o relatório de um dia específico
         const mostrarRelatorio = (dataKey) => {
+            // Limpa o relatório acumulado ao ver um diário
+            relatorioAcumuladoContainer.innerHTML = '';
+
             if (!dataKey || !historicoVendas[dataKey]) {
                 relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
                 return;
@@ -905,6 +947,93 @@
                 </div>
             `;
             lucide.createIcons();
+        };
+
+        // NOVO: Função para calcular e mostrar relatório acumulado
+        const mostrarRelatorioAcumulado = () => {
+            // Limpa o relatório diário ao ver um acumulado
+            relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
+            seletorData.value = '';
+
+            const dataInicio = dataInicioInput.value;
+            const dataFim = dataFimInput.value;
+
+            if (!dataInicio || !dataFim) {
+                alert('Por favor, selecione data de início e fim.');
+                return;
+            }
+
+            const dataInicioObj = new Date(dataInicio + 'T00:00:00');
+            const dataFimObj = new Date(dataFim + 'T23:59:59');
+
+            if (dataFimObj < dataInicioObj) {
+                alert('A data final não pode ser anterior à data inicial.');
+                return;
+            }
+            
+            const totaisAcumulados = {
+                vendaBruta: 0,
+                trocoInicialTotal: 0,
+                dinheiro: 0,
+                cartao: 0,
+                pix: 0,
+                fiado: 0,
+                pagamentosFiado: 0,
+                diasContados: 0
+            };
+
+            // Itera pelas chaves do histórico (YYYY-MM-DD)
+            for (const dataKey in historicoVendas) {
+                const relatorio = historicoVendas[dataKey];
+                const dataRelatorio = new Date(relatorio.data);
+
+                if (dataRelatorio >= dataInicioObj && dataRelatorio <= dataFimObj) {
+                    totaisAcumulados.diasContados++;
+                    totaisAcumulados.vendaBruta += relatorio.resumo.total || 0;
+                    totaisAcumulados.trocoInicialTotal += relatorio.trocoInicial || 0;
+                    totaisAcumulados.dinheiro += relatorio.resumo.Dinheiro || 0;
+                    totaisAcumulados.cartao += relatorio.resumo.Cartão || 0;
+                    totaisAcumulados.pix += relatorio.resumo.Pix || 0;
+                    totaisAcumulados.fiado += relatorio.resumo.Fiado || 0;
+                    
+                    if (relatorio.pagamentos && relatorio.pagamentos.length > 0) {
+                        totaisAcumulados.pagamentosFiado += relatorio.pagamentos.reduce((acc, pag) => acc + pag.valor, 0);
+                    }
+                }
+            }
+
+            if (totaisAcumulados.diasContados === 0) {
+                 relatorioAcumuladoContainer.innerHTML = `<div class="border rounded-lg p-4 bg-gray-50 text-center text-gray-600">Nenhum relatório encontrado no período de ${formatarData(dataInicioObj.toISOString())} até ${formatarData(dataFimObj.toISOString())}.</div>`;
+                 return;
+            }
+
+            const totalDinheiroGerado = totaisAcumulados.trocoInicialTotal + totaisAcumulados.dinheiro + totaisAcumulados.pagamentosFiado;
+            
+            // Renderiza o resultado
+            relatorioAcumuladoContainer.innerHTML = `
+                <div class="border-t pt-4">
+                    <h3 class="text-xl font-bold text-gray-800">Relatório Acumulado</h3>
+                    <p class="text-sm text-gray-500 mb-3">De ${formatarData(dataInicioObj.toISOString())} até ${formatarData(dataFimObj.toISOString())} (${totaisAcumulados.diasContados} dias)</p>
+                    
+                    <div class="space-y-2 border-t pt-2">
+                        <div class="flex justify-between font-bold text-blue-600"><p>Venda Total (Bruta):</p><p>${formatarMoeda(totaisAcumulados.vendaBruta)}</p></div>
+                        <div class="flex justify-between text-sm text-gray-700"><p>Total Valor Inicial (Troco):</p><p>${formatarMoeda(totaisAcumulados.trocoInicialTotal)}</p></div>
+                        <div class="flex justify-between text-sm"><p>Dinheiro (Vendas):</p><p>${formatarMoeda(totaisAcumulados.dinheiro)}</p></div>
+                        <div class="flex justify-between text-sm"><p>Cartão:</p><p>${formatarMoeda(totaisAcumulados.cartao)}</p></div>
+                        <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(totaisAcumulados.pix)}</p></div>
+                        <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(totaisAcumulados.fiado)}</p></div>
+                    </div>
+                    
+                    <div class="space-y-2 border-t pt-2">
+                        <div class="flex justify-between font-bold text-green-600"><p>Pagamentos de Fiado Recebidos:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiado)}</p></div>
+                    </div>
+                    
+                    <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded mt-2">
+                        <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro Gerado:</p><p>${formatarMoeda(totalDinheiroGerado)}</p></div>
+                        <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pagamentos Recebidos)</p>
+                    </div>
+                </div>
+            `;
         };
         
         // Mostra o modal de extrato de um cliente
@@ -1162,6 +1291,9 @@
         
         // Mudar data do seletor de histórico
         seletorData.addEventListener('change', (e) => mostrarRelatorio(e.target.value));
+
+        // NOVO: Calcular relatório por período
+        calcularPeriodoBtn.addEventListener('click', mostrarRelatorioAcumulado);
 
         // Imprimir relatório
         relatorioContainer.addEventListener('click', (e) => {
