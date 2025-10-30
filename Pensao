@@ -411,14 +411,26 @@
                 
                 if (dados && typeof dados === 'object' && dados.hasOwnProperty('divida')) {
                     // Já é um objeto (formato {divida, ...})
-                    const telefone = dados.telefone;
-                    if (telefone && telefone.trim() !== '') {
-                        // Tem telefone, ele vira a chave
-                        fiadoMigrado[telefone] = { 
-                            divida: dados.divida, 
-                            nome: dados.nome || chave, // Pega o nome salvo ou a chave antiga (nome)
-                            telefone: telefone 
-                        };
+                    const telefoneBruto = dados.telefone;
+                    // *** INÍCIO DA CORREÇÃO ***
+                    if (telefoneBruto && telefoneBruto.trim() !== '') {
+                        const telefoneLimpo = telefoneBruto.replace(/\D/g, ''); // LIMPA O TELEFONE
+                        
+                        if(telefoneLimpo) {
+                             fiadoMigrado[telefoneLimpo] = { // USA O TELEFONE LIMPO COMO CHAVE
+                                divida: dados.divida, 
+                                nome: dados.nome || chave, 
+                                telefone: telefoneLimpo // SALVA O TELEFONE LIMPO
+                            };
+                        } else {
+                            // Tinha telefone mas era inválido, usa a chave antiga (nome)
+                             fiadoMigrado[chave] = { 
+                                divida: dados.divida, 
+                                nome: dados.nome || chave, 
+                                telefone: '' 
+                            };
+                        }
+                       
                     } else {
                         // Não tem telefone, a chave antiga (nome) é mantida
                         fiadoMigrado[chave] = { 
@@ -427,6 +439,7 @@
                             telefone: '' 
                         };
                     }
+                    // *** FIM DA CORREÇÃO ***
                 } else if (typeof dados === 'number') {
                     // Formato MUITO antigo (nome: divida)
                     fiadoMigrado[chave] = { divida: dados, nome: chave, telefone: '' };
@@ -450,6 +463,25 @@
         // Funções de formatação e salvamento
         const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatarData = (isoString) => new Date(isoString).toLocaleDateString('pt-BR');
+        
+        // *** INÍCIO DA CORREÇÃO ***
+        // NOVA FUNÇÃO para formatar telefone
+        const formatarTelefone = (numero) => {
+            if (!numero) return '';
+            const numLimpo = String(numero).replace(/\D/g, '');
+            
+            if (numLimpo.length === 11) {
+                // (DD) 9NNNN-NNNN
+                return `(${numLimpo.substring(0, 2)}) ${numLimpo.substring(2, 7)}-${numLimpo.substring(7)}`;
+            }
+            if (numLimpo.length === 10) {
+                // (DD) NNNN-NNNN
+                return `(${numLimpo.substring(0, 2)}) ${numLimpo.substring(2, 6)}-${numLimpo.substring(6)}`;
+            }
+            // Retorna o número como está se não se encaixar nos padrões
+            return numero; 
+        };
+        // *** FIM DA CORREÇÃO ***
 
         const salvarDados = () => {
             localStorage.setItem('vendasHoje', JSON.stringify(vendasHoje));
@@ -564,10 +596,11 @@
                 const clienteDiv = document.createElement('div');
                 clienteDiv.className = 'border rounded-lg p-4 space-y-3';
                 
-                // ATUALIZADO: Exibe nome (se houver) ou a chave (telefone/nome antigo)
-                const nomeDisplay = dividaObj.nome || "(Sem Nome)";
-                // ATUALIZADO: Exibe telefone (se houver) ou a chave (se for um telefone)
-                const telefoneDisplay = dividaObj.telefone || (chave.match(/^[0-9() -]+$/) ? chave : '');
+                // *** INÍCIO DA CORREÇÃO ***
+                // ATUALIZADO: Lógica de exibição de nome e telefone
+                const nomeDisplay = dividaObj.nome || (dividaObj.telefone ? "(Sem Nome)" : chave);
+                const telefoneDisplay = formatarTelefone(dividaObj.telefone); // Usa a função de formatação
+                // *** FIM DA CORREÇÃO ***
 
                 clienteDiv.innerHTML = `
                     <div class="flex justify-between items-start">
@@ -658,11 +691,18 @@
             
             // ATUALIZADO: Ordenação de comandas A/B
             let vendasHtml = vendas.sort(ordenarVendasPorComanda).map(venda => {
-                // ATUALIZADO: Mostra nome ou telefone no relatório de fiado
+                // *** INÍCIO DA CORREÇÃO ***
+                // ATUALIZADO: Mostra nome e telefone formatado no relatório de fiado
                 let clienteDisplay = '';
                 if (venda.tipo === 'Fiado') {
-                    clienteDisplay = venda.clienteNome ? `(${venda.clienteNome})` : `(${venda.clienteTelefone})`;
+                    const telFormatado = formatarTelefone(venda.clienteTelefone);
+                    if (venda.clienteNome) {
+                        clienteDisplay = `(${venda.clienteNome} / ${telFormatado})`;
+                    } else {
+                        clienteDisplay = `(${telFormatado})`;
+                    }
                 }
+                // *** FIM DA CORREÇÃO ***
 
                 return `
                 <li class="flex justify-between items-center p-2 even:bg-gray-50">
@@ -766,21 +806,23 @@
 
             if (tipoPagamento === 'Fiado') {
                 const nomeCliente = nomeClienteFiadoInput.value.trim();
-                const telefoneCliente = telefoneClienteFiadoInput.value.trim();
+                // *** INÍCIO DA CORREÇÃO ***
+                const telefoneClienteBruto = telefoneClienteFiadoInput.value.trim();
+                const telefoneCliente = telefoneClienteBruto.replace(/\D/g, ''); // Remove tudo que não for dígito
                 
-                // ATUALIZADO: Telefone é obrigatório
+                // ATUALIZADO: Telefone (limpo) é obrigatório
                 if (!telefoneCliente) { 
-                    alert('Por favor, insira o telefone do cliente (obrigatório).'); 
+                    alert('Por favor, insira um telefone do cliente (obrigatório).'); 
                     telefoneClienteFiadoInput.focus();
                     return; 
                 }
                 
-                const chaveCliente = telefoneCliente; // Telefone é a chave
+                const chaveCliente = telefoneCliente; // Telefone limpo é a chave
                 
                 novaVenda.clienteNome = nomeCliente;
-                novaVenda.clienteTelefone = telefoneCliente;
+                novaVenda.clienteTelefone = telefoneCliente; // Salva o telefone limpo
                 
-                // ATUALIZADO: Lógica de salvar/atualizar cliente pelo telefone
+                // ATUALIZADO: Lógica de salvar/atualizar cliente pelo telefone limpo
                 if (!clientesFiado[chaveCliente]) {
                     // Cliente novo
                     clientesFiado[chaveCliente] = { divida: valor, nome: nomeCliente, telefone: telefoneCliente };
@@ -792,6 +834,7 @@
                         clientesFiado[chaveCliente].nome = nomeCliente;
                     }
                 }
+                // *** FIM DA CORREÇÃO ***
             }
             
             vendasHoje.push(novaVenda);
@@ -872,7 +915,7 @@
             if (confirm(`Remover a venda da comanda Nº ${vendaParaRemover.comanda}?`)) {
                 if (vendaParaRemover.tipo === 'Fiado' && vendaParaRemover.clienteTelefone) {
                     // ATUALIZADO: Usa a chave (telefone) para encontrar o cliente
-                    const clienteChave = vendaParaRemover.clienteTelefone;
+                    const clienteChave = vendaParaRemover.clienteTelefone; // Já está limpo
                     if (clientesFiado[clienteChave]) {
                         clientesFiado[clienteChave].divida -= vendaParaRemover.valor;
                         if (clientesFiado[clienteChave].divida < 0.01) {
