@@ -217,25 +217,35 @@
                         <p id="comandasRegistradas" class="text-sm text-gray-500 break-words leading-relaxed">Nenhuma comanda registrada.</p>
                     </div>
 
-                    <!-- Seção de Encerramento de Dia ATUALIZADA -->
-                    <div class="mt-6 pt-6 border-t border-dashed">
-                         <h3 class="text-lg font-bold text-gray-700 mb-3">Encerrar Expediente</h3>
-                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                               <label for="ultimaComandaA" class="block text-sm font-medium text-gray-600 mb-1">Última Amarela (A)</label>
-                               <input type="number" id="ultimaComandaA" class="input-field" placeholder="Ex: 10">
-                           </div>
-                            <div>
-                               <label for="ultimaComandaB" class="block text-sm font-medium text-gray-600 mb-1">Última Branca (B)</label>
-                               <input type="number" id="ultimaComandaB" class="input-field" placeholder="Ex: 25">
-                           </div>
+                    <!-- Seção de Encerramento de Dia foi MOVIDA -->
+                </div>
+
+                <!-- NOVO: Card de Configuração e Encerramento -->
+                <div class="card">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <i data-lucide="settings-2"></i>
+                        Configurar e Encerrar Dia
+                    </h2>
+                    <p class="text-sm text-gray-500 mb-4">Defina a **quantidade total** de comandas que serão usadas no dia. O sistema verificará se a contagem bate antes de encerrar.</p>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div>
+                           <label for="ultimaComandaA" class="block text-sm font-medium text-gray-600 mb-1">Total de Amarelas (A)</label>
+                           <input type="number" id="ultimaComandaA" class="input-field" placeholder="Ex: 50">
                        </div>
+                        <div>
+                           <label for="ultimaComandaB" class="block text-sm font-medium text-gray-600 mb-1">Total de Brancas (B)</label>
+                           <input type="number" id="ultimaComandaB" class="input-field" placeholder="Ex: 100">
+                       </div>
+                   </div>
+                    <button id="salvarConfigComandasBtn" class="btn btn-primary w-full mt-3"><i data-lucide="save"></i> Salvar Totais do Dia</button>
+                    <div class="mt-4 pt-4 border-t border-dashed">
                         <button id="resetarDiaBtn" class="btn btn-danger w-full mt-3">
                             <i data-lucide="power-off"></i>
                             Verificar e Encerrar Dia
                         </button>
                     </div>
                 </div>
+
             </div>
 
             <!-- Coluna da Direita: Vendas, Fiado e Relatórios -->
@@ -343,8 +353,9 @@
         const campoClienteFiado = document.getElementById('campoClienteFiado');
         const nomeClienteFiadoInput = document.getElementById('nomeClienteFiado');
         const resetarDiaBtn = document.getElementById('resetarDiaBtn');
-        const ultimaComandaAInput = document.getElementById('ultimaComandaA'); // NOVO
-        const ultimaComandaBInput = document.getElementById('ultimaComandaB'); // NOVO
+        const ultimaComandaAInput = document.getElementById('ultimaComandaA'); // ID mantido, mas agora em outro card
+        const ultimaComandaBInput = document.getElementById('ultimaComandaB'); // ID mantido, mas agora em outro card
+        const salvarConfigComandasBtn = document.getElementById('salvarConfigComandasBtn'); // NOVO BOTÃO
         
         // Displays de resumo
         const totalVendasHojeEl = document.getElementById('totalVendasHoje');
@@ -388,6 +399,7 @@
         let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || []; // Agora armazena "A1", "B1", etc.
         let historicoVendas = JSON.parse(localStorage.getItem('historicoVendas')) || {};
         let pagamentosHoje = JSON.parse(localStorage.getItem('pagamentosHoje')) || []; // NOVO: Armazena pagamentos de fiado do dia
+        let configComandas = JSON.parse(localStorage.getItem('configComandas')) || { maxA: 0, maxB: 0 }; // NOVO: Salva os totais esperados
 
         // Funções de formatação e salvamento
         const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -399,6 +411,7 @@
             localStorage.setItem('comandasHoje', JSON.stringify(comandasHoje));
             localStorage.setItem('historicoVendas', JSON.stringify(historicoVendas));
             localStorage.setItem('pagamentosHoje', JSON.stringify(pagamentosHoje)); // NOVO: Salva pagamentos do dia
+            localStorage.setItem('configComandas', JSON.stringify(configComandas)); // NOVO: Salva a config
         };
         
         const arquivarVendasDoDia = () => {
@@ -419,9 +432,9 @@
                 resumo: { ...totais, total: totalVendas },
                 vendas: [...vendasHoje],
                 pagamentos: [...pagamentosHoje], // NOVO: Salva os pagamentos no histórico
-                ultimaComanda: { // ATUALIZADO
-                    A: parseInt(ultimaComandaAInput.value) || 0,
-                    B: parseInt(ultimaComandaBInput.value) || 0
+                ultimaComanda: { // ATUALIZADO: Lê da config salva
+                    A: configComandas.maxA,
+                    B: configComandas.maxB
                 }
             };
         };
@@ -431,6 +444,7 @@
             vendasHoje = [];
             comandasHoje = [];
             pagamentosHoje = []; // NOVO: Limpa os pagamentos do dia
+            configComandas = { maxA: 0, maxB: 0 }; // NOVO: Reseta a configuração
             ultimaComandaAInput.value = ''; // ATUALIZADO
             ultimaComandaBInput.value = ''; // ATUALIZADO
             salvarDados();
@@ -651,6 +665,11 @@
             renderizarClientesFiado();
             renderizarVendasDoDia();
             renderizarSeletorHistorico();
+            
+            // NOVO: Carrega os valores salvos da configuração nos inputs
+            ultimaComandaAInput.value = configComandas.maxA > 0 ? configComandas.maxA : '';
+            ultimaComandaBInput.value = configComandas.maxB > 0 ? configComandas.maxB : '';
+            
             lucide.createIcons();
         };
 
@@ -773,69 +792,70 @@
             if (e.target.id === 'imprimirBtn') window.print();
         });
 
-        // ATUALIZADO: Lógica de encerramento de dia
+        // NOVO: Evento para salvar a configuração de comandas
+        salvarConfigComandasBtn.addEventListener('click', () => {
+            configComandas.maxA = parseInt(ultimaComandaAInput.value) || 0;
+            configComandas.maxB = parseInt(ultimaComandaBInput.value) || 0;
+            salvarDados();
+            alert('Totais de comandas salvos para o dia!');
+        });
+
+        // ==================================================================
+        // /// INÍCIO DA LÓGICA DE ENCERRAMENTO CORRIGIDA ///
+        // ==================================================================
         resetarDiaBtn.addEventListener('click', () => {
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) {
                 if(confirm('Nenhuma venda ou pagamento registrado. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
                 return;
             }
             
-            const ultimaA = parseInt(ultimaComandaAInput.value) || 0;
-            const ultimaB = parseInt(ultimaComandaBInput.value) || 0;
+            // LÊ OS TOTAIS ESPERADOS (QUANTIDADE) DA CONFIGURAÇÃO SALVA
+            const totalEsperadoA = configComandas.maxA; // Ex: 4
+            const totalEsperadoB = configComandas.maxB; // Ex: 0
 
-            // Separa os números das comandas A e B
-            const comandasA = comandasHoje.filter(c => c.startsWith('A')).map(c => parseInt(c.substring(1)));
-            const comandasB = comandasHoje.filter(c => c.startsWith('B')).map(c => parseInt(c.substring(1)));
+            // CONTA QUANTAS COMANDAS DE CADA TIPO FORAM REGISTRADAS
+            const totalRegistradoA = comandasHoje.filter(c => c.startsWith('A')).length; // Ex: 4 (de A15, A16, A17, A18)
+            const totalRegistradoB = comandasHoje.filter(c => c.startsWith('B')).length; // Ex: 0
 
-            const maxA = comandasA.length > 0 ? Math.max(...comandasA) : 0;
-            const maxB = comandasB.length > 0 ? Math.max(...comandasB) : 0;
-
-            // Validação: Só pede "última A" se A foi usada. Só pede "última B" se B foi usada.
-            if (comandasA.length > 0 && ultimaA === 0) {
-                 alert('Você registrou comandas Amarelas (A). Por favor, informe o número da última comanda Amarela.');
+            // Validação: Verifica se a configuração foi salva
+            // Se registrou comandas A, mas o total esperado A é 0, avisa.
+            if ((totalRegistradoA > 0 && totalEsperadoA === 0) || (totalRegistradoB > 0 && totalEsperadoB === 0)) {
+                 alert('Você registrou comandas, mas não salvou os totais esperados (A e B). Por favor, defina os totais e clique em "Salvar Totais do Dia" antes de encerrar.');
                  ultimaComandaAInput.focus();
                  return;
             }
-             if (comandasB.length > 0 && ultimaB === 0) {
-                 alert('Você registrou comandas Brancas (B). Por favor, informe o número da última comanda Branca.');
-                 ultimaComandaBInput.focus();
-                 return;
+            
+            // Validação 2: Verificar se a CONTAGEM de comandas bate com o total configurado
+            const diferencaA = totalEsperadoA - totalRegistradoA; // Ex: 4 (esperado) - 4 (registrado) = 0
+            const diferencaB = totalEsperadoB - totalRegistradoB; // Ex: 0 (esperado) - 0 (registrado) = 0
+
+            let mensagensErro = [];
+            if (diferencaA > 0) {
+                mensagensErro.push(`Faltam ${diferencaA} comanda(s) Amarela(s)`);
+            } else if (diferencaA < 0) { // Menos que zero significa excesso
+                mensagensErro.push(`Existem ${-diferencaA} comanda(s) Amarela(s) a mais`);
             }
             
-            // Validação: Última informada não pode ser menor que a maior registrada
-            if (ultimaA < maxA) {
-                alert(`A última comanda Amarela (${ultimaA}) não pode ser menor que a maior já registrada (A${maxA}).`);
-                ultimaComandaAInput.focus();
-                return;
-            }
-            if (ultimaB < maxB) {
-                alert(`A última comanda Branca (${ultimaB}) não pode ser menor que a maior já registrada (B${maxB}).`);
-                ultimaComandaBInput.focus();
-                return;
+            if (diferencaB > 0) {
+                mensagensErro.push(`Faltam ${diferencaB} comanda(s) Branca(s)`);
+            } else if (diferencaB < 0) {
+                mensagensErro.push(`Existem ${-diferencaB} comanda(s) Branca(s) a mais`);
             }
 
-            // Validação: Procura por comandas faltantes em cada série
-            const faltantesA = [];
-            for (let i = 1; i <= ultimaA; i++) {
-                if (!comandasA.includes(i)) faltantesA.push(`A${i}`);
-            }
-            
-            const faltantesB = [];
-            for (let i = 1; i <= ultimaB; i++) {
-                if (!comandasB.includes(i)) faltantesB.push(`B${i}`);
-            }
-
-            const comandasFaltantes = [...faltantesA, ...faltantesB];
-
-            if (comandasFaltantes.length > 0) {
-                senhaModalMensagem.textContent = `Faltando comandas: ${comandasFaltantes.join(', ')}. Digite a senha para forçar o encerramento.`;
+            if (mensagensErro.length > 0) {
+                // Se houver qualquer diferença (falta ou excesso), pede a senha
+                senhaModalMensagem.textContent = `A contagem de comandas não bate com o total configurado: ${mensagensErro.join(', ')}. Digite a senha para forçar o encerramento.`;
                 acaoPendenteComSenha = resetarDadosDoDia; // Define a ação pendente
                 senhaModal.classList.remove('hidden');
                 senhaInput.focus();
             } else {
-                if(confirm('Todas as comandas estão em ordem. Deseja encerrar e arquivar o dia?')) resetarDadosDoDia();
+                // Contagem bate perfeitamente
+                if(confirm('A contagem de comandas (baseado no total configurado) está correta. Deseja encerrar e arquivar o dia?')) resetarDadosDoDia();
             }
         });
+        // ==================================================================
+        // /// FIM DA LÓGICA DE ENCERRAMENTO CORRIGIDA ///
+        // ==================================================================
         
         cancelarSenhaBtn.addEventListener('click', () => {
             senhaModal.classList.add('hidden');
