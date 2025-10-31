@@ -255,7 +255,7 @@
                             <span id="totalCartao">R$ 0,00</span>
                         </div>
                         <div class="flex justify-between items-center text-gray-600">
-                            <span><i data-lucide="smartphone" class="w-4 h-4 inline-block mr-2 text-purple-500"></i>Pix:</span>
+                            <span><i data-lucide="smartphone" class="w-4 h-4 inline-block mr-2 text-purple-600"></i>Pix:</span>
                             <span id="totalPix">R$ 0,00</span>
                         </div>
                          <div class="flex justify-between items-center text-red-600 font-medium">
@@ -329,6 +329,34 @@
                     <div id="listaVendasHoje" class="space-y-2 max-h-60 overflow-y-auto pr-2">
                         <!-- Vendas serão inseridas aqui -->
                         <p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>
+                    </div>
+                </div>
+
+                <!-- NOVO CARD: Cadastro de Clientes -->
+                <div class="card h-fit">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <i data-lucide="contact"></i>
+                        Cadastro de Clientes
+                    </h2>
+                    <!-- Formulário de Adicionar Cliente -->
+                    <form id="addClienteForm" class="space-y-3 mb-4 border-b pb-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="nomeClienteCadastro" class="block text-sm font-medium text-gray-600 mb-1">Nome</label>
+                                <input type="text" id="nomeClienteCadastro" class="input-field" placeholder="Nome completo" required>
+                            </div>
+                            <div>
+                                <label for="telefoneClienteCadastro" class="block text-sm font-medium text-gray-600 mb-1">Telefone</label>
+                                <input type="tel" id="telefoneClienteCadastro" class="input-field" placeholder="(21) 99999-8888" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-full"><i data-lucide="user-plus"></i>Adicionar Cliente</button>
+                    </form>
+                    
+                    <!-- Lista de Clientes Cadastrados -->
+                    <h3 class="text-lg font-semibold text-gray-600 mb-2">Clientes Salvos</h3>
+                    <div id="listaClientesCadastrados" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                        <p class="text-center text-gray-500 py-4">Nenhum cliente cadastrado manualmente.</p>
                     </div>
                 </div>
 
@@ -449,7 +477,6 @@
         // Elementos da UI
         const vendaForm = document.getElementById('vendaForm');
         const valorVendaInput = document.getElementById('valorVenda');
-        // CAMPOS DE COMANDA ATUALIZADOS
         const numeroComandaAInput = document.getElementById('numeroComandaA');
         const numeroComandaBInput = document.getElementById('numeroComandaB');
         const tipoPagamentoRadios = document.querySelectorAll('input[name="tipoPagamento"]');
@@ -479,6 +506,11 @@
         const listaVendasHojeEl = document.getElementById('listaVendasHoje');
         const comandasRegistradasEl = document.getElementById('comandasRegistradas');
 
+        // NOVO: Seção Cadastro de Clientes
+        const addClienteForm = document.getElementById('addClienteForm');
+        const nomeClienteCadastroInput = document.getElementById('nomeClienteCadastro');
+        const telefoneClienteCadastroInput = document.getElementById('telefoneClienteCadastro');
+        const listaClientesCadastradosEl = document.getElementById('listaClientesCadastrados');
 
         // Seção de Histórico e Backup
         const seletorData = document.getElementById('seletorData');
@@ -493,7 +525,6 @@
         const dataFimInput = document.getElementById('dataFim');
         const calcularPeriodoBtn = document.getElementById('calcularPeriodoBtn');
         const relatorioAcumuladoContainer = document.getElementById('relatorioAcumuladoContainer');
-
 
         // Modal de Senha
         const senhaModal = document.getElementById('senhaModal');
@@ -513,6 +544,9 @@
         const SENHA_ADMIN = 'admin123';
         let acaoPendenteComSenha = null; // Armazena a função a ser executada
 
+        // Função de Limpeza de Telefone
+        const limparTelefone = (tel) => (tel || '').replace(/\D/g, '');
+
         const migrarEstruturaFiado = (dadosFiado) => {
             const fiadoMigrado = {};
             for (const chave in dadosFiado) {
@@ -520,33 +554,22 @@
                 
                 if (dados && typeof dados === 'object') {
                     // Tenta extrair telefone da chave ou do objeto, e limpa
-                    const telLimpo = (dados.telefone || (chave.match(/^[0-9() -]+$/) ? chave : '')).replace(/\D/g, '');
+                    const telLimpo = limparTelefone(dados.telefone || (chave.match(/^[0-9() -]+$/) ? chave : ''));
                     const chaveMigrada = telLimpo || chave; // Chave primária agora é o telefone limpo, se existir
 
                     if (dados.hasOwnProperty('transacoes')) {
-                        // Estrutura já é nova (ou parcialmente nova)
-                        fiadoMigrado[chaveMigrada] = {
-                            ...dados,
-                            telefone: telLimpo // Garante que o telefone esteja salvo e limpo
-                        };
+                        fiadoMigrado[chaveMigrada] = { ...dados, telefone: telLimpo };
                     } else if (dados.hasOwnProperty('divida')) {
-                        // Estrutura antiga (Nome: {divida: X}) - migra para transação
                         fiadoMigrado[chaveMigrada] = {
                             nome: dados.nome || (telLimpo ? '(Sem Nome)' : chave),
                             telefone: telLimpo,
                             transacoes: [
-                                { 
-                                    data: new Date().toISOString(), 
-                                    tipo: 'importado', 
-                                    valor: dados.divida, 
-                                    comanda: 'SALDO ANTERIOR' 
-                                }
+                                { data: new Date().toISOString(), tipo: 'importado', valor: dados.divida, comanda: 'SALDO ANTERIOR' }
                             ]
                         };
                     }
                 } else if (typeof dados === 'number') {
-                    // Estrutura muito antiga (Nome: X)
-                    fiadoMigrado[chave] = { // Mantém a chave como nome pois não há telefone
+                    fiadoMigrado[chave] = {
                         nome: chave, 
                         telefone: '', 
                         transacoes: [
@@ -557,14 +580,39 @@
             }
             return fiadoMigrado;
         };
+        
+        // NOVO: Migra clientes do fiado para o cadastro geral (executa uma vez)
+        const migrarClientesParaCadastro = (clientesFiado, cadastroClientes) => {
+            let cadastroAtualizado = { ...cadastroClientes };
+            let cadastroMudou = false;
+            for (const telLimpo in clientesFiado) {
+                if (telLimpo && !cadastroAtualizado[telLimpo]) { // Adiciona se não existir
+                    cadastroAtualizado[telLimpo] = {
+                        nome: clientesFiado[telLimpo].nome || '(Sem Nome)',
+                        telefone: telLimpo // O telefone já é a chave limpa
+                    };
+                    cadastroMudou = true;
+                }
+            }
+            return { cadastro: cadastroAtualizado, mudou: cadastroMudou };
+        };
 
 
         // Carrega os dados do localStorage ou inicializa com valores padrão
         let vendasHoje = JSON.parse(localStorage.getItem('vendasHoje')) || [];
-        // Migra os dados de fiado na carga inicial
         let clientesFiadoBruto = JSON.parse(localStorage.getItem('clientesFiado')) || {};
         let clientesFiado = migrarEstruturaFiado(clientesFiadoBruto); 
+        // NOVO: Carrega cadastro de clientes
+        let cadastroClientes = JSON.parse(localStorage.getItem('cadastroClientes')) || {};
         
+        // Executa a migração do fiado para o cadastro
+        const migracaoCadastro = migrarClientesParaCadastro(clientesFiado, cadastroClientes);
+        if (migracaoCadastro.mudou) {
+            cadastroClientes = migracaoCadastro.cadastro;
+            // Salva os dados migrados imediatamente
+            localStorage.setItem('cadastroClientes', JSON.stringify(cadastroClientes));
+        }
+
         let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || []; 
         let historicoVendas = JSON.parse(localStorage.getItem('historicoVendas')) || {};
         let pagamentosHoje = JSON.parse(localStorage.getItem('pagamentosHoje')) || []; 
@@ -577,23 +625,14 @@
         const formatarDataHora = (isoString) => new Date(isoString).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const formatarHora = (isoString) => new Date(isoString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         
-        // Formata um telefone limpo (só dígitos) para exibição
         const formatarTelefone = (numero) => {
             if (!numero) return '';
             const numLimpo = String(numero).replace(/\D/g, '');
-            
-            if (numLimpo.length === 11) {
-                // (XX) XXXXX-XXXX
-                return `(${numLimpo.substring(0, 2)}) ${numLimpo.substring(2, 7)}-${numLimpo.substring(7)}`;
-            }
-            if (numLimpo.length === 10) {
-                // (XX) XXXX-XXXX
-                return `(${numLimpo.substring(0, 2)}) ${numLimpo.substring(2, 6)}-${numLimpo.substring(6)}`;
-            }
-            return numero; // Retorna o número original (ou limpo) se não bater
+            if (numLimpo.length === 11) return `(${numLimpo.substring(0, 2)}) ${numLimpo.substring(2, 7)}-${numLimpo.substring(7)}`;
+            if (numLimpo.length === 10) return `(${numLimpo.substring(0, 2)}) ${numLimpo.substring(2, 6)}-${numLimpo.substring(6)}`;
+            return numero;
         };
         
-        // Calcula a dívida total de um cliente somando suas transações
         const calcularDividaCliente = (chave) => {
             if (!clientesFiado[chave] || !clientesFiado[chave].transacoes) return 0;
             return clientesFiado[chave].transacoes.reduce((acc, t) => acc + t.valor, 0);
@@ -606,75 +645,63 @@
             localStorage.setItem('historicoVendas', JSON.stringify(historicoVendas));
             localStorage.setItem('pagamentosHoje', JSON.stringify(pagamentosHoje)); 
             localStorage.setItem('configComandas', JSON.stringify(configComandas)); 
+            localStorage.setItem('cadastroClientes', JSON.stringify(cadastroClientes)); // NOVO
         };
         
-        // Salva o dia atual no histórico
         const arquivarVendasDoDia = () => {
-            if (vendasHoje.length === 0 && pagamentosHoje.length === 0) return; // Não arquiva dia vazio
-            
+// ... (código existente, sem alteração) ...
+            if (vendasHoje.length === 0 && pagamentosHoje.length === 0) return;
             const hoje = new Date();
-            // Garante que a chaveData não tenha problemas com fuso horário
             const chaveData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-            
             const totais = vendasHoje.reduce((acc, venda) => {
                 acc[venda.tipo] = (acc[venda.tipo] || 0) + venda.valor;
                 return acc;
             }, { 'Dinheiro': 0, 'Cartão': 0, 'Pix': 0, 'Fiado': 0 });
-
             const totalVendas = totais.Dinheiro + totais.Cartão + totais.Pix + totais.Fiado;
-            
             historicoVendas[chaveData] = {
                 data: hoje.toISOString(),
                 resumo: { ...totais, total: totalVendas },
                 vendas: [...vendasHoje],
                 pagamentos: [...pagamentosHoje], 
-                trocoInicial: configComandas.trocoInicial, // Salva o troco
-                ultimaComanda: { 
-                    A: configComandas.maxA,
-                    B: configComandas.maxB
-                }
+                trocoInicial: configComandas.trocoInicial,
+                ultimaComanda: { A: configComandas.maxA, B: configComandas.maxB }
             };
         };
 
         const resetarDadosDoDia = () => {
+// ... (código existente, sem alteração) ...
             arquivarVendasDoDia();
             vendasHoje = [];
             comandasHoje = [];
             pagamentosHoje = []; 
-            // Reseta a configuração do dia (mantém o troco para o dia seguinte se desejar, mas aqui zeramos)
             configComandas = { maxA: 0, maxB: 0, trocoInicial: 0 }; 
             ultimaComandaAInput.value = ''; 
             ultimaComandaBInput.value = ''; 
-            trocoInicialInput.value = ''; // Limpa o campo de troco
+            trocoInicialInput.value = '';
             salvarDados();
             atualizarUI();
             alert('Dia encerrado e arquivado com sucesso! Novo dia iniciado.');
         }
 
         const limparHistoricoAntigo = () => {
-            if (Object.keys(historicoVendas).length === 0) {
-                alert('O histórico já está vazio.');
-                return;
-            }
+// ... (código existente, sem alteração) ...
+            if (Object.keys(historicoVendas).length === 0) { alert('O histórico já está vazio.'); return; }
             historicoVendas = {};
             salvarDados();
             atualizarUI();
             alert('Histórico de vendas antigo foi permanentemente apagado! (A lista de fiado foi mantida).');
         }
 
-        // Funções de ordenação para exibição
         const ordenarComandas = (a, b) => {
-            const tipoA = a.charAt(0);
-            const tipoB = b.charAt(0);
-            const numA = parseInt(a.substring(1));
-            const numB = parseInt(b.substring(1));
-            
-            if (tipoA < tipoB) return -1;
-            if (tipoA > tipoB) return 1;
+// ... (código existente, sem alteração) ...
+            const tipoA = a.charAt(0); const tipoB = b.charAt(0);
+            const numA = parseInt(a.substring(1)); const numB = parseInt(b.substring(1));
+            if (tipoA < tipoB) return -1; if (tipoA > tipoB) return 1;
             return numA - numB;
         };
 
         const ordenarVendasPorComanda = (a, b) => {
+// ... (código existente, sem alteração) ...
             return ordenarComandas(a.comanda, b.comanda);
         };
 
@@ -682,83 +709,55 @@
         // --- LÓGICA DE RENDERIZAÇÃO ---
         
         const renderizarResumoDiario = () => {
-            // 1. Calcula totais de vendas
+// ... (código existente, sem alteração) ...
             const totais = vendasHoje.reduce((acc, venda) => {
                 acc[venda.tipo] = (acc[venda.tipo] || 0) + venda.valor;
                 return acc;
             }, { 'Dinheiro': 0, 'Cartão': 0, 'Pix': 0, 'Fiado': 0 });
-
             const totalVendas = totais.Dinheiro + totais.Cartão + totais.Pix + totais.Fiado;
-
-            // 2. Calcula total de pagamentos de fiado recebidos
             const totalPagamentosFiado = pagamentosHoje.reduce((acc, pag) => acc + pag.valor, 0);
-
-            // 3. Calcula a previsão de caixa
             const totalDinheiroVendas = totais.Dinheiro;
             const totalDinheiroCaixa = (configComandas.trocoInicial || 0) + totalDinheiroVendas + totalPagamentosFiado; 
-
-            // 4. Atualiza a UI
             totalVendasHojeEl.textContent = formatarMoeda(totalVendas);
             totalDinheiroEl.textContent = formatarMoeda(totalDinheiroVendas);
             totalCartaoEl.textContent = formatarMoeda(totais.Cartão);
             totalPixEl.textContent = formatarMoeda(totais.Pix);
             totalFiadoHojeEl.textContent = formatarMoeda(totais.Fiado);
-            
             totalPagamentosFiadoHojeEl.textContent = formatarMoeda(totalPagamentosFiado);
             totalCaixaDinheiroEl.textContent = formatarMoeda(totalDinheiroCaixa);
         };
 
         const renderizarClientesFiado = () => {
+// ... (código existente, sem alteração) ...
             listaClientesFiadoEl.innerHTML = '';
             const chavesClientes = Object.keys(clientesFiado); 
-            let totalGeral = 0;
-            let clientesAtivos = 0; 
-
+            let totalGeral = 0; let clientesAtivos = 0; 
             if (chavesClientes.length === 0) {
                 listaClientesFiadoEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>';
-                totalFiadoGeralEl.textContent = formatarMoeda(0);
-                return;
+                totalFiadoGeralEl.textContent = formatarMoeda(0); return;
             }
-
-            // Ordena clientes pelo nome (ou chave, se não houver nome)
             chavesClientes.sort((a, b) => {
-                const nomeA = clientesFiado[a].nome || a;
-                const nomeB = clientesFiado[b].nome || b;
+                const nomeA = clientesFiado[a].nome || a; const nomeB = clientesFiado[b].nome || b;
                 return nomeA.localeCompare(nomeB);
             }).forEach(chave => {
                 const dividaObj = clientesFiado[chave];
-                
                 const dividaValor = calcularDividaCliente(chave);
                 totalGeral += dividaValor;
-
-                // Não renderiza clientes com dívida zerada ou negativa
-                if (dividaValor < 0.01) {
-                    return;
-                }
+                if (dividaValor < 0.01) { return; }
                 clientesAtivos++;
-                
                 const clienteDiv = document.createElement('div');
                 clienteDiv.className = 'border rounded-lg p-4 space-y-3';
-                
                 const nomeDisplay = dividaObj.nome || (dividaObj.telefone ? "(Sem Nome)" : chave);
                 const telefoneDisplay = formatarTelefone(dividaObj.telefone);
-
                 clienteDiv.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-lg font-semibold text-gray-800">${nomeDisplay}</p>
-                            ${telefoneDisplay ? `
-                            <div class="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                <i data-lucide="phone" class="w-4 h-4"></i>
-                                <span>${telefoneDisplay}</span>
-                            </div>` : ''}
+                            ${telefoneDisplay ? `<div class="flex items-center gap-2 text-sm text-gray-500 mt-1"><i data-lucide="phone" class="w-4 h-4"></i><span>${telefoneDisplay}</span></div>` : ''}
                         </div>
                         <div class="text-right">
                             <p class="text-lg font-bold text-red-600 flex-shrink-0">${formatarMoeda(dividaValor)}</p>
-                            <!-- Botão de Histórico -->
-                            <button class="btn btn-outline-secondary mt-1 ver-historico-btn" data-cliente-chave="${chave}">
-                                <i data-lucide="history" class="w-3 h-3"></i>Ver Histórico
-                            </button>
+                            <button class="btn btn-outline-secondary mt-1 ver-historico-btn" data-cliente-chave="${chave}"><i data-lucide="history" class="w-3 h-3"></i>Ver Histórico</button>
                         </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
@@ -768,32 +767,54 @@
                     </div>`;
                 listaClientesFiadoEl.appendChild(clienteDiv);
             });
-
-            if (clientesAtivos === 0) {
-                 listaClientesFiadoEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>';
-            }
-            
+            if (clientesAtivos === 0) { listaClientesFiadoEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>'; }
             totalFiadoGeralEl.textContent = formatarMoeda(totalGeral);
         };
 
-        const renderizarVendasDoDia = () => {
-            listaVendasHojeEl.innerHTML = '';
-            // Exibe a lista de comandas registradas no resumo
-            comandasRegistradasEl.textContent = comandasHoje.length > 0 ? [...comandasHoje].sort(ordenarComandas).join(', ') : 'Nenhuma comanda registrada.';
+        // NOVO: Renderiza a lista de clientes cadastrados
+        const renderizarCadastroClientes = () => {
+            listaClientesCadastradosEl.innerHTML = '';
+            const chavesClientes = Object.keys(cadastroClientes);
 
-            if (vendasHoje.length === 0) {
-                listaVendasHojeEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>';
+            if (chavesClientes.length === 0) {
+                listaClientesCadastradosEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente cadastrado.</p>';
                 return;
             }
-            
-            // Renderiza a lista de vendas, ordenada por comanda
-            [...vendasHoje].sort(ordenarVendasPorComanda).forEach(venda => {
-                // Encontra o índice original da venda (antes de ordenar) para o botão de remover
-                const originalIndex = vendasHoje.findIndex(v => v.transacaoId === venda.transacaoId);
+
+            // Ordena pelo nome
+            chavesClientes.sort((a, b) => {
+                const nomeA = cadastroClientes[a].nome || a;
+                const nomeB = cadastroClientes[b].nome || b;
+                return nomeA.localeCompare(nomeB);
+            }).forEach(chave => {
+                const cliente = cadastroClientes[chave];
+                const clienteDiv = document.createElement('div');
+                clienteDiv.className = 'flex justify-between items-center p-2 rounded-md even:bg-gray-50';
                 
+                clienteDiv.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-800">${cliente.nome}</p>
+                        <p class="text-sm text-gray-500">${formatarTelefone(cliente.telefone)}</p>
+                    </div>
+                    <button class="btn btn-outline-danger text-xs remover-cliente-cadastro-btn" data-cliente-chave="${chave}">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>Remover
+                    </button>
+                `;
+                listaClientesCadastradosEl.appendChild(clienteDiv);
+            });
+        };
+
+        const renderizarVendasDoDia = () => {
+// ... (código existente, sem alteração) ...
+            listaVendasHojeEl.innerHTML = '';
+            comandasRegistradasEl.textContent = comandasHoje.length > 0 ? [...comandasHoje].sort(ordenarComandas).join(', ') : 'Nenhuma comanda registrada.';
+            if (vendasHoje.length === 0) {
+                listaVendasHojeEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhuma venda registrada ainda.</p>'; return;
+            }
+            [...vendasHoje].sort(ordenarVendasPorComanda).forEach(venda => {
+                const originalIndex = vendasHoje.findIndex(v => v.transacaoId === venda.transacaoId);
                 const vendaDiv = document.createElement('div');
                 vendaDiv.className = 'flex justify-between items-center p-2 rounded-md even:bg-gray-50';
-                
                 let tipoPagamentoIcon = '';
                 switch(venda.tipo) {
                     case 'Dinheiro': tipoPagamentoIcon = '<i data-lucide="dollar-sign" class="w-4 h-4 text-green-600"></i>'; break;
@@ -801,7 +822,6 @@
                     case 'Pix': tipoPagamentoIcon = '<i data-lucide="smartphone" class="w-4 h-4 text-purple-600"></i>'; break;
                     case 'Fiado': tipoPagamentoIcon = '<i data-lucide="book-user" class="w-4 h-4 text-red-600"></i>'; break;
                 }
-
                 vendaDiv.innerHTML = `
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-gray-700 w-10 text-center">${venda.comanda}</span>
@@ -815,23 +835,19 @@
         };
 
         const renderizarSeletorHistorico = () => {
+// ... (código existente, sem alteração) ...
             seletorData.innerHTML = '';
-            // Limpa containers de relatório
             relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
             relatorioAcumuladoContainer.innerHTML = '';
-            
             const datasSalvas = Object.keys(historicoVendas).sort().reverse();
-
             if (datasSalvas.length === 0) {
                 seletorData.innerHTML = '<option>Nenhum relatório salvo</option>';
-                // Define as datas padrão para o relatório acumulado
                 const hoje = new Date();
                 const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
                 dataInicioInput.value = formatarDataInput(primeiroDiaMes.toISOString());
                 dataFimInput.value = formatarDataInput(hoje.toISOString());
                 return;
             }
-
             seletorData.innerHTML = '<option value="">Selecione uma data</option>';
             datasSalvas.forEach(dataKey => {
                 const option = document.createElement('option');
@@ -839,59 +855,41 @@
                 option.textContent = formatarData(historicoVendas[dataKey].data);
                 seletorData.appendChild(option);
             });
-            
-            // Define datas padrão para o seletor de período
             dataInicioInput.value = datasSalvas.length > 0 ? datasSalvas[datasSalvas.length - 1] : formatarDataInput(new Date().toISOString());
             dataFimInput.value = datasSalvas.length > 0 ? datasSalvas[0] : formatarDataInput(new Date().toISOString());
         };
 
-        // Função para exibir o relatório de um dia específico
         const mostrarRelatorio = (dataKey) => {
-            // Limpa o relatório acumulado ao ver um diário
+// ... (código existente, sem alteração) ...
             relatorioAcumuladoContainer.innerHTML = '';
-
             if (!dataKey || !historicoVendas[dataKey]) {
-                relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
-                return;
+                relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>'; return;
             }
-
             const relatorio = historicoVendas[dataKey];
             const { resumo, vendas, pagamentos, trocoInicial } = relatorio; 
-            
-            // Gera HTML para lista de vendas
             let vendasHtml = vendas.sort(ordenarVendasPorComanda).map(venda => {
                 let clienteDisplay = '';
                 if (venda.tipo === 'Fiado') {
                     const telFormatado = formatarTelefone(venda.clienteTelefone);
-                    if (venda.clienteNome) {
-                        clienteDisplay = `(${venda.clienteNome} / ${telFormatado})`;
-                    } else {
-                        clienteDisplay = `(${telFormatado})`;
-                    }
+                    if (venda.clienteNome) { clienteDisplay = `(${venda.clienteNome} / ${telFormatado})`; }
+                    else { clienteDisplay = `(${telFormatado})`; }
                 }
-
                 return `
                 <li class="flex justify-between items-center p-2 even:bg-gray-50">
                     <span>Comanda <strong>#${venda.comanda}</strong></span>
                     <span class="font-semibold">${formatarMoeda(venda.valor)}</span>
                     <span class="text-sm text-gray-600">${venda.tipo} ${clienteDisplay}</span>
-                </li>
-            `}).join('');
-            if (vendas.length === 0) {
-                vendasHtml = '<li class="text-center text-gray-500 p-2">Nenhuma venda registrada.</li>';
-            }
-
-            // Gera HTML para lista de pagamentos
+                </li>`;
+            }).join('');
+            if (vendas.length === 0) { vendasHtml = '<li class="text-center text-gray-500 p-2">Nenhuma venda registrada.</li>'; }
             let pagamentosHtml = '';
             let totalPagamentos = 0;
             if (pagamentos && pagamentos.length > 0) {
-                pagamentos.sort((a, b) => new Date(a.data) - new Date(b.data)); // Ordena pagamentos por hora
-
+                pagamentos.sort((a, b) => new Date(a.data) - new Date(b.data));
                 pagamentosHtml = pagamentos.map(pag => {
                     totalPagamentos += pag.valor;
                     const telFormatado = pag.telefone ? `(${formatarTelefone(pag.telefone)})` : '';
                     const horaPagamento = formatarHora(pag.data);
-
                     return `
                     <li class="flex justify-between items-center p-2 even:bg-gray-50">
                         <div>
@@ -899,22 +897,13 @@
                             <span class="text-xs text-gray-500 block">às ${horaPagamento}</span>
                         </div>
                         <span class="font-semibold text-green-600">${formatarMoeda(pag.valor)}</span>
-                    </li>
-                `;
+                    </li>`;
                 }).join('');
-            } else {
-                pagamentosHtml = '<li class="text-center text-gray-500 p-2">Nenhum pagamento recebido.</li>';
-            }
-            
-            // Calcula o total em dinheiro para o relatório
+            } else { pagamentosHtml = '<li class="text-center text-gray-500 p-2">Nenhum pagamento recebido.</li>'; }
             const totalDinheiroRelatorio = (trocoInicial || 0) + resumo.Dinheiro + totalPagamentos;
-
-            // HTML do Relatório atualizado
             relatorioContainer.innerHTML = `
                 <div class="space-y-3">
                     <h3 class="text-xl font-bold text-gray-800">Relatório de ${formatarData(relatorio.data)}</h3>
-                    
-                    <!-- Resumo Geral de Vendas -->
                     <div class="space-y-2 border-t pt-2">
                         <div class="flex justify-between font-bold text-blue-600"><p>Venda Total (Bruta):</p><p>${formatarMoeda(resumo.total)}</p></div>
                         <div class="flex justify-between text-sm text-gray-700"><p>Valor Inicial (Troco):</p><p>${formatarMoeda(trocoInicial || 0)}</p></div>
@@ -923,73 +912,39 @@
                         <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(resumo.Pix)}</p></div>
                         <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
                     </div>
-
-                    <!-- Resumo de Pagamentos -->
                     <div class="space-y-2 border-t pt-2">
                         <div class="flex justify-between font-bold text-green-600"><p>Pagamentos de Fiado Recebidos:</p><p>${formatarMoeda(totalPagamentos)}</p></div>
                     </div>
-                    
                     <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded">
                         <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro (Final):</p><p>${formatarMoeda(totalDinheiroRelatorio)}</p></div>
                         <p class="text-xs text-blue-600">(Valor Inicial + Vendas em Dinheiro + Pagamentos Recebidos)</p>
                     </div>
-
-                    <!-- Detalhes Vendas -->
                     <div class="border-t pt-2">
                         <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2">${vendasHtml}</ul>
                     </div>
-
-                    <!-- Detalhes Pagamentos -->
                     <div class="border-t pt-2">
                         <h4 class="font-semibold mb-2">Detalhes dos Pagamentos (${pagamentos ? pagamentos.length : 0} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2">${pagamentosHtml}</ul>
                     </div>
-
                     <button id="imprimirBtn" class="btn btn-success w-full mt-4 no-print"><i data-lucide="printer"></i>Imprimir Relatório</button>
                 </div>
             `;
             lucide.createIcons();
         };
 
-        // Função para calcular e mostrar relatório acumulado
         const mostrarRelatorioAcumulado = () => {
-            // Limpa o relatório diário ao ver um acumulado
+// ... (código existente, sem alteração) ...
             relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
             seletorData.value = '';
-
-            const dataInicio = dataInicioInput.value;
-            const dataFim = dataFimInput.value;
-
-            if (!dataInicio || !dataFim) {
-                alert('Por favor, selecione data de início e fim.');
-                return;
-            }
-
-            const dataInicioObj = new Date(dataInicio + 'T00:00:00');
-            const dataFimObj = new Date(dataFim + 'T23:59:59');
-
-            if (dataFimObj < dataInicioObj) {
-                alert('A data final não pode ser anterior à data inicial.');
-                return;
-            }
-            
-            const totaisAcumulados = {
-                vendaBruta: 0,
-                trocoInicialTotal: 0,
-                dinheiro: 0,
-                cartao: 0,
-                pix: 0,
-                fiado: 0,
-                pagamentosFiado: 0,
-                diasContados: 0
-            };
-
-            // Itera pelas chaves do histórico (YYYY-MM-DD)
+            const dataInicio = dataInicioInput.value; const dataFim = dataFimInput.value;
+            if (!dataInicio || !dataFim) { alert('Por favor, selecione data de início e fim.'); return; }
+            const dataInicioObj = new Date(dataInicio + 'T00:00:00'); const dataFimObj = new Date(dataFim + 'T23:59:59');
+            if (dataFimObj < dataInicioObj) { alert('A data final não pode ser anterior à data inicial.'); return; }
+            const totaisAcumulados = { vendaBruta: 0, trocoInicialTotal: 0, dinheiro: 0, cartao: 0, pix: 0, fiado: 0, pagamentosFiado: 0, diasContados: 0 };
             for (const dataKey in historicoVendas) {
                 const relatorio = historicoVendas[dataKey];
                 const dataRelatorio = new Date(relatorio.data);
-
                 if (dataRelatorio >= dataInicioObj && dataRelatorio <= dataFimObj) {
                     totaisAcumulados.diasContados++;
                     totaisAcumulados.vendaBruta += relatorio.resumo.total || 0;
@@ -998,26 +953,20 @@
                     totaisAcumulados.cartao += relatorio.resumo.Cartão || 0;
                     totaisAcumulados.pix += relatorio.resumo.Pix || 0;
                     totaisAcumulados.fiado += relatorio.resumo.Fiado || 0;
-                    
                     if (relatorio.pagamentos && relatorio.pagamentos.length > 0) {
                         totaisAcumulados.pagamentosFiado += relatorio.pagamentos.reduce((acc, pag) => acc + pag.valor, 0);
                     }
                 }
             }
-
             if (totaisAcumulados.diasContados === 0) {
                  relatorioAcumuladoContainer.innerHTML = `<div class="border rounded-lg p-4 bg-gray-50 text-center text-gray-600">Nenhum relatório encontrado no período de ${formatarData(dataInicioObj.toISOString())} até ${formatarData(dataFimObj.toISOString())}.</div>`;
                  return;
             }
-
             const totalDinheiroGerado = totaisAcumulados.trocoInicialTotal + totaisAcumulados.dinheiro + totaisAcumulados.pagamentosFiado;
-            
-            // Renderiza o resultado
             relatorioAcumuladoContainer.innerHTML = `
                 <div class="border-t pt-4">
                     <h3 class="text-xl font-bold text-gray-800">Relatório Acumulado</h3>
                     <p class="text-sm text-gray-500 mb-3">De ${formatarData(dataInicioObj.toISOString())} até ${formatarData(dataFimObj.toISOString())} (${totaisAcumulados.diasContados} dias)</p>
-                    
                     <div class="space-y-2 border-t pt-2">
                         <div class="flex justify-between font-bold text-blue-600"><p>Venda Total (Bruta):</p><p>${formatarMoeda(totaisAcumulados.vendaBruta)}</p></div>
                         <div class="flex justify-between text-sm text-gray-700"><p>Total Valor Inicial (Troco):</p><p>${formatarMoeda(totaisAcumulados.trocoInicialTotal)}</p></div>
@@ -1026,11 +975,9 @@
                         <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(totaisAcumulados.pix)}</p></div>
                         <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(totaisAcumulados.fiado)}</p></div>
                     </div>
-                    
                     <div class="space-y-2 border-t pt-2">
                         <div class="flex justify-between font-bold text-green-600"><p>Pagamentos de Fiado Recebidos:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiado)}</p></div>
                     </div>
-                    
                     <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded mt-2">
                         <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro Gerado:</p><p>${formatarMoeda(totalDinheiroGerado)}</p></div>
                         <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pagamentos Recebidos)</p>
@@ -1039,390 +986,300 @@
             `;
         };
         
-        // Mostra o modal de extrato de um cliente
         const mostrarHistoricoFiado = (chaveCliente) => {
-            const cliente = clientesFiado[chaveCliente];
-            if (!cliente) return;
-            
+// ... (código existente, sem alteração) ...
+            const cliente = clientesFiado[chaveCliente]; if (!cliente) return;
             const nomeDisplay = cliente.nome || formatarTelefone(cliente.telefone) || chaveCliente;
             historicoFiadoModalTitulo.textContent = `Histórico de: ${nomeDisplay}`;
-            
             historicoFiadoModalConteudo.innerHTML = ''; 
-            
             let saldoCorrente = 0;
             const transacoesHtml = cliente.transacoes
-                .sort((a, b) => new Date(a.data) - new Date(b.data)) // Ordena transações por data
+                .sort((a, b) => new Date(a.data) - new Date(b.data))
                 .map(t => {
                     saldoCorrente += t.valor;
-                    
-                    let descricao = '';
-                    let valorClasse = '';
-                    
-                    if (t.tipo === 'compra') {
-                        descricao = `Compra (Comanda #${t.comanda})`;
-                        valorClasse = 'text-red-600';
-                    } else if (t.tipo === 'pagamento') {
-                        descricao = 'Pagamento';
-                        valorClasse = 'text-green-600';
-                    } else if (t.tipo === 'importado') {
-                        descricao = 'Saldo Anterior (Importado)';
-                        valorClasse = 'text-gray-600';
-                    }
-                    
+                    let descricao = ''; let valorClasse = '';
+                    if (t.tipo === 'compra') { descricao = `Compra (Comanda #${t.comanda})`; valorClasse = 'text-red-600'; }
+                    else if (t.tipo === 'pagamento') { descricao = 'Pagamento'; valorClasse = 'text-green-600'; }
+                    else if (t.tipo === 'importado') { descricao = 'Saldo Anterior (Importado)'; valorClasse = 'text-gray-600'; }
                     return `
                     <li class="flex justify-between items-center p-3 border-b">
-                        <div>
-                            <p class="font-semibold">${descricao}</p>
-                            <p class="text-sm text-gray-500">${formatarDataHora(t.data)}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold ${valorClasse}">${formatarMoeda(t.valor)}</p>
-                            <p class="text-sm text-gray-600">Saldo: ${formatarMoeda(saldoCorrente)}</p>
-                        </div>
-                    </li>
-                    `;
+                        <div><p class="font-semibold">${descricao}</p><p class="text-sm text-gray-500">${formatarDataHora(t.data)}</p></div>
+                        <div class="text-right"><p class="font-bold ${valorClasse}">${formatarMoeda(t.valor)}</p><p class="text-sm text-gray-600">Saldo: ${formatarMoeda(saldoCorrente)}</p></div>
+                    </li>`;
                 }).join('');
-                
             historicoFiadoModalConteudo.innerHTML = `<ul class="space-y-1">${transacoesHtml}</ul>`;
-            
             historicoFiadoModal.style.display = 'flex';
-            lucide.createIcons(); // Recria ícones se houver algum no modal (não há, mas é boa prática)
+            lucide.createIcons();
         };
 
-        // Função central que atualiza todos os elementos visuais
         const atualizarUI = () => {
             renderizarResumoDiario();
             renderizarClientesFiado();
+            renderizarCadastroClientes(); // NOVO
             renderizarVendasDoDia();
             renderizarSeletorHistorico();
-            
-            // Recarrega os valores salvos de configuração nos inputs
             trocoInicialInput.value = configComandas.trocoInicial > 0 ? configComandas.trocoInicial : '';
             ultimaComandaAInput.value = configComandas.maxA > 0 ? configComandas.maxA : '';
             ultimaComandaBInput.value = configComandas.maxB > 0 ? configComandas.maxB : '';
-            
             lucide.createIcons();
         };
 
         // --- LÓGICA DE EVENTOS ---
         
-        // Evento de envio do formulário de Venda
         vendaForm.addEventListener('submit', (e) => {
+// ... (código existente, com uma adição) ...
             e.preventDefault();
             const valor = parseFloat(valorVendaInput.value);
-            
-            // NOVO: Lógica para os dois inputs
-            const numA = parseInt(numeroComandaAInput.value);
-            const numB = parseInt(numeroComandaBInput.value);
-            
+            const numA = parseInt(numeroComandaAInput.value); const numB = parseInt(numeroComandaBInput.value);
             let tipoComanda, numeroComanda;
-            if (!isNaN(numA) && numA > 0) {
-                tipoComanda = 'A';
-                numeroComanda = numA;
-            } else if (!isNaN(numB) && numB > 0) {
-                tipoComanda = 'B';
-                numeroComanda = numB;
-            } else {
-                alert('Por favor, insira um número de comanda válido (A ou B).');
-                return;
-            }
-            
+            if (!isNaN(numA) && numA > 0) { tipoComanda = 'A'; numeroComanda = numA; }
+            else if (!isNaN(numB) && numB > 0) { tipoComanda = 'B'; numeroComanda = numB; }
+            else { alert('Por favor, insira um número de comanda válido (A ou B).'); return; }
             const tipoPagamento = document.querySelector('input[name="tipoPagamento"]:checked').value;
-            
             const comandaId = tipoComanda + numeroComanda; 
-            const transacaoId = new Date().toISOString(); // ID único para a transação
-
-            // Validações
+            const transacaoId = new Date().toISOString();
             if (isNaN(valor) || valor <= 0) { alert('Por favor, insira um valor de venda válido.'); return; }
             if(comandasHoje.includes(comandaId)) { alert(`A comanda de número ${comandaId} já foi registrada hoje.`); return; } 
-
-            const novaVenda = { 
-                comanda: comandaId, 
-                valor, 
-                tipo: tipoPagamento, 
-                data: transacaoId, 
-                transacaoId: transacaoId // ID para rastrear remoções
-            }; 
-
+            const novaVenda = { comanda: comandaId, valor, tipo: tipoPagamento, data: transacaoId, transacaoId: transacaoId }; 
             if (tipoPagamento === 'Fiado') {
                 const nomeCliente = nomeClienteFiadoInput.value.trim();
                 const telefoneClienteBruto = telefoneClienteFiadoInput.value.trim();
-                const telefoneCliente = telefoneClienteBruto.replace(/\D/g, ''); // Limpa o telefone
-                
-                if (!telefoneCliente) { 
-                    alert('Por favor, insira um telefone do cliente (obrigatório).'); 
-                    telefoneClienteFiadoInput.focus();
-                    return; 
-                }
-                
-                const chaveCliente = telefoneCliente; // Telefone limpo é a chave
-                
+                const telefoneCliente = limparTelefone(telefoneClienteBruto);
+                if (!telefoneCliente) { alert('Por favor, insira um telefone do cliente (obrigatório).'); telefoneClienteFiadoInput.focus(); return; } 
+                const chaveCliente = telefoneCliente;
                 novaVenda.clienteNome = nomeCliente;
                 novaVenda.clienteTelefone = telefoneCliente; 
-                
-                // Cria o cliente se não existir
                 if (!clientesFiado[chaveCliente]) {
                     clientesFiado[chaveCliente] = { nome: nomeCliente, telefone: telefoneCliente, transacoes: [] };
                 }
-                // Atualiza o nome se um novo for fornecido (ou se for o primeiro)
-                if (nomeCliente) {
-                    clientesFiado[chaveCliente].nome = nomeCliente;
-                }
-                // Adiciona a transação de compra
+                if (nomeCliente) { clientesFiado[chaveCliente].nome = nomeCliente; }
                 clientesFiado[chaveCliente].transacoes.push({
-                    data: transacaoId,
-                    tipo: 'compra',
-                    valor: valor, 
-                    comanda: comandaId,
-                    transacaoId: transacaoId // Vincula a transação à venda
+                    data: transacaoId, tipo: 'compra', valor: valor, comanda: comandaId, transacaoId: transacaoId
                 });
+                
+                // NOVO: Adiciona/atualiza no cadastro geral de clientes
+                if (nomeCliente && (!cadastroClientes[chaveCliente] || cadastroClientes[chaveCliente].nome !== nomeCliente)) {
+                     cadastroClientes[chaveCliente] = { nome: nomeCliente, telefone: telefoneCliente };
+                } else if (!cadastroClientes[chaveCliente]) {
+                     cadastroClientes[chaveCliente] = { nome: '(Sem Nome)', telefone: telefoneCliente };
+                }
             }
-            
             vendasHoje.push(novaVenda);
             comandasHoje.push(comandaId); 
             salvarDados();
             atualizarUI();
-
-            // Reseta o formulário
             vendaForm.reset();
             campoClienteFiado.classList.add('hidden');
             nomeClienteFiadoInput.required = false;
             telefoneClienteFiadoInput.required = false;
-            // Limpa e reabilita os inputs de comanda
-            numeroComandaAInput.value = '';
-            numeroComandaBInput.value = '';
-            numeroComandaAInput.disabled = false;
-            numeroComandaBInput.disabled = false;
+            numeroComandaAInput.value = ''; numeroComandaBInput.value = '';
+            numeroComandaAInput.disabled = false; numeroComandaBInput.disabled = false;
             numeroComandaAInput.focus();
         });
         
-        // NOVO: Lógica para desabilitar inputs de comanda
         numeroComandaAInput.addEventListener('input', () => {
+// ... (código existente, sem alteração) ...
             numeroComandaBInput.disabled = !!numeroComandaAInput.value;
         });
         numeroComandaBInput.addEventListener('input', () => {
+// ... (código existente, sem alteração) ...
             numeroComandaAInput.disabled = !!numeroComandaBInput.value;
         });
 
-        // Exibe/oculta campos de fiado
         tipoPagamentoRadios.forEach(radio => radio.addEventListener('change', () => {
+// ... (código existente, sem alteração) ...
             campoClienteFiado.classList.toggle('hidden', radio.value !== 'Fiado');
-            nomeClienteFiadoInput.required = false; // Nome nunca é obrigatório
+            nomeClienteFiadoInput.required = false;
             telefoneClienteFiadoInput.required = (radio.value === 'Fiado');
         }));
+        
+        // NOVO: Evento de input no telefone do fiado para autopreencher nome
+        telefoneClienteFiadoInput.addEventListener('input', (e) => {
+             const telLimpo = limparTelefone(e.target.value);
+             // Um pequeno delay para não verificar a cada dígito
+             setTimeout(() => {
+                if (cadastroClientes[telLimpo]) {
+                    nomeClienteFiadoInput.value = cadastroClientes[telLimpo].nome || '';
+                }
+             }, 100);
+        });
+        
+        // NOVO: Evento para o formulário de cadastro de clientes
+        addClienteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nome = nomeClienteCadastroInput.value.trim();
+            const telefoneBruto = telefoneClienteCadastroInput.value.trim();
+            const telefoneLimpo = limparTelefone(telefoneBruto);
 
-        // Eventos na lista de clientes (Pagar, Quitar, Histórico)
-        listaClientesFiadoEl.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            const clienteChave = target.dataset.clienteChave; 
-
-            // Botão "Ver Histórico"
-            if (target.classList.contains('ver-historico-btn')) {
-                mostrarHistoricoFiado(clienteChave);
+            if (!nome || !telefoneLimpo) {
+                alert('Nome e Telefone são obrigatórios para o cadastro.');
                 return;
             }
 
-            // Botão "Pagar/Amortizar"
+            if (cadastroClientes[telefoneLimpo]) {
+                alert('Um cliente com este número de telefone já existe no cadastro.');
+                return;
+            }
+
+            cadastroClientes[telefoneLimpo] = { nome: nome, telefone: telefoneLimpo };
+            salvarDados();
+            atualizarUI();
+            
+            addClienteForm.reset();
+            alert('Cliente adicionado ao cadastro!');
+        });
+        
+        // NOVO: Evento para remover cliente do cadastro geral
+        listaClientesCadastradosEl.addEventListener('click', (e) => {
+            const target = e.target.closest('.remover-cliente-cadastro-btn');
+            if (!target) return;
+            
+            const clienteChave = target.dataset.clienteChave;
+            const clienteNome = cadastroClientes[clienteChave]?.nome || 'Cliente';
+
+            if (confirm(`Tem certeza que deseja remover "${clienteNome}" do seu cadastro de clientes?\n\n(Atenção: Isso NÃO afeta o histórico de dívidas dele na "Gestão de Fiado".)`)) {
+                delete cadastroClientes[clienteChave];
+                salvarDados();
+                atualizarUI();
+            }
+        });
+
+
+        listaClientesFiadoEl.addEventListener('click', (e) => {
+// ... (código existente, sem alteração) ...
+            const target = e.target.closest('button');
+            if (!target) return;
+            const clienteChave = target.dataset.clienteChave; 
+            if (target.classList.contains('ver-historico-btn')) {
+                mostrarHistoricoFiado(clienteChave); return;
+            }
             if (target.classList.contains('pagar-fiado-btn')) {
                 const inputValor = target.parentElement.querySelector('input');
                 const valorPago = parseFloat(inputValor.value);
                 if (isNaN(valorPago) || valorPago <= 0) { alert('Valor de pagamento inválido.'); return; }
-                
                 const nomeParaRelatorio = clientesFiado[clienteChave].nome || clienteChave;
                 const telefoneCliente = clientesFiado[clienteChave].telefone || (clienteChave.match(/^[0-9() -]+$/) ? clienteChave : '');
                 const dataPagamento = new Date().toISOString();
-
-                // Adiciona ao relatório de pagamentos do dia
-                pagamentosHoje.push({
-                    cliente: nomeParaRelatorio,
-                    telefone: telefoneCliente,
-                    valor: valorPago,
-                    data: dataPagamento
-                });
-
-                // Adiciona a transação de pagamento (valor negativo) ao cliente
-                clientesFiado[clienteChave].transacoes.push({
-                    data: dataPagamento,
-                    tipo: 'pagamento',
-                    valor: -valorPago 
-                });
-                
+                pagamentosHoje.push({ cliente: nomeParaRelatorio, telefone: telefoneCliente, valor: valorPago, data: dataPagamento });
+                clientesFiado[clienteChave].transacoes.push({ data: dataPagamento, tipo: 'pagamento', valor: -valorPago });
                 salvarDados(); 
                 atualizarUI();
                 inputValor.value = ''; 
-
-            // Botão "Quitar e Remover"
             } else if (target.classList.contains('remover-cliente-btn')) {
                 const nomeParaRelatorio = clientesFiado[clienteChave].nome || clienteChave;
-                
                 const valorQuitado = calcularDividaCliente(clienteChave);
-
-                if (valorQuitado < 0.01) {
-                    alert('Este cliente não possui dívidas para quitar.');
-                    return;
-                }
-
+                if (valorQuitado < 0.01) { alert('Este cliente não possui dívidas para quitar.'); return; }
                 if (confirm(`Tem certeza que deseja quitar a dívida de ${formatarMoeda(valorQuitado)} para "${nomeParaRelatorio}"?`)) {
-                    
                     const telefoneCliente = clientesFiado[clienteChave].telefone || (clienteChave.match(/^[0-9() -]+$/) ? clienteChave : '');
                     const dataPagamento = new Date().toISOString();
-                    
-                    // Adiciona o pagamento total ao relatório do dia
-                    pagamentosHoje.push({
-                        cliente: nomeParaRelatorio,
-                        telefone: telefoneCliente, 
-                        valor: valorQuitado, 
-                        data: dataPagamento
-                    });
-
-                    // Adiciona a transação final de quitação
-                    clientesFiado[clienteChave].transacoes.push({
-                        data: dataPagamento,
-                        tipo: 'pagamento',
-                        valor: -valorQuitado 
-                    });
-                    
+                    pagamentosHoje.push({ cliente: nomeParaRelatorio, telefone: telefoneCliente, valor: valorQuitado, data: dataPagamento });
+                    clientesFiado[clienteChave].transacoes.push({ data: dataPagamento, tipo: 'pagamento', valor: -valorQuitado });
                     salvarDados();
-                    atualizarUI(); // Cliente sumirá da lista pois a dívida é 0
+                    atualizarUI();
                 }
             }
         });
 
-        // Evento na lista de vendas (Remover)
         listaVendasHojeEl.addEventListener('click', (e) => {
+// ... (código existente, sem alteração) ...
             const target = e.target.closest('.remover-venda-btn');
             if (!target) return;
-
             const index = parseInt(target.dataset.vendaIndex);
             const vendaParaRemover = vendasHoje[index];
-
             if (confirm(`Remover a venda da comanda Nº ${vendaParaRemover.comanda}?`)) {
-                
-                // Se for fiado, remove a transação de compra do cliente
                 if (vendaParaRemover.tipo === 'Fiado' && vendaParaRemover.clienteTelefone) {
                     const clienteChave = vendaParaRemover.clienteTelefone; 
                     if (clientesFiado[clienteChave] && clientesFiado[clienteChave].transacoes) {
-                        // Filtra a transação baseada no ID único
                         clientesFiado[clienteChave].transacoes = clientesFiado[clienteChave].transacoes.filter(
                             t => t.transacaoId !== vendaParaRemover.transacaoId
                         );
                     }
                 }
-
-                // Remove a comanda da lista do dia
                 comandasHoje = comandasHoje.filter(c => c !== vendaParaRemover.comanda); 
-                // Remove a venda da lista do dia
                 vendasHoje.splice(index, 1);
                 salvarDados();
                 atualizarUI();
             }
         });
         
-        // Mudar data do seletor de histórico
         seletorData.addEventListener('change', (e) => mostrarRelatorio(e.target.value));
-
-        // Calcular relatório por período
         calcularPeriodoBtn.addEventListener('click', mostrarRelatorioAcumulado);
-
-        // Imprimir relatório
         relatorioContainer.addEventListener('click', (e) => {
             const target = e.target.closest('#imprimirBtn');
             if (target) window.print();
         });
 
-        // Salvar configuração do dia (Totais e Troco)
         salvarConfigComandasBtn.addEventListener('click', () => {
+// ... (código existente, sem alteração) ...
             configComandas.maxA = parseInt(ultimaComandaAInput.value) || 0;
             configComandas.maxB = parseInt(ultimaComandaBInput.value) || 0;
             configComandas.trocoInicial = parseFloat(trocoInicialInput.value) || 0;
             salvarDados();
             alert('Totais de comandas e valor inicial salvos para o dia!');
-            atualizarUI(); // Atualiza a previsão do caixa imediatamente
+            atualizarUI();
         });
 
-        // Verificar e Encerrar Dia
         resetarDiaBtn.addEventListener('click', () => {
+// ... (código existente, sem alteração) ...
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) {
                 if(confirm('Nenhuma venda ou pagamento registrado. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
                 return;
             }
-            
-            const totalEsperadoA = configComandas.maxA; 
-            const totalEsperadoB = configComandas.maxB; 
-
-            // Conta quantas comandas de cada tipo foram registradas
+            const totalEsperadoA = configComandas.maxA; const totalEsperadoB = configComandas.maxB; 
             const totalRegistradoA = comandasHoje.filter(c => c.startsWith('A')).length; 
             const totalRegistradoB = comandasHoje.filter(c => c.startsWith('B')).length; 
-
-            // Validação de segurança: se registrou comandas mas não configurou o total
             if ((totalRegistradoA > 0 && totalEsperadoA === 0) || (totalRegistradoB > 0 && totalEsperadoB === 0)) {
                  alert('Você registrou comandas, mas não salvou os totais esperados (A e B). Por favor, defina os totais e clique em "Salvar Totais do Dia" antes de encerrar.');
                  ultimaComandaAInput.focus();
                  return;
             }
-            
-            const diferencaA = totalEsperadoA - totalRegistradoA; // Positivo = falta, Negativo = sobra
+            const diferencaA = totalEsperadoA - totalRegistradoA;
             const diferencaB = totalEsperadoB - totalRegistradoB; 
-
             let mensagensErro = [];
-            if (diferencaA > 0) {
-                mensagensErro.push(`Faltam ${diferencaA} comanda(s) Amarela(s)`);
-            } else if (diferencaA < 0) { 
-                mensagensErro.push(`Existem ${-diferencaA} comanda(s) Amarela(s) a mais`);
-            }
-            
-            if (diferencaB > 0) {
-                mensagensErro.push(`Faltam ${diferencaB} comanda(s) Branca(s)`);
-            } else if (diferencaB < 0) {
-                mensagensErro.push(`Existem ${-diferencaB} comanda(s) Branca(s) a mais`);
-            }
-
-            // Se houver qualquer discrepância, pede senha
+            if (diferencaA > 0) { mensagensErro.push(`Faltam ${diferencaA} comanda(s) Amarela(s)`); }
+            else if (diferencaA < 0) { mensagensErro.push(`Existem ${-diferencaA} comanda(s) Amarela(s) a mais`); }
+            if (diferencaB > 0) { mensagensErro.push(`Faltam ${diferencaB} comanda(s) Branca(s)`); }
+            else if (diferencaB < 0) { mensagensErro.push(`Existem ${-diferencaB} comanda(s) Branca(s) a mais`); }
             if (mensagensErro.length > 0) {
                 senhaModalMensagem.textContent = `A contagem de comandas não bate com o total configurado: ${mensagensErro.join(', ')}. Digite a senha para forçar o encerramento.`;
                 acaoPendenteComSenha = resetarDadosDoDia; 
                 senhaModal.style.display = 'flex';
                 senhaInput.focus();
             } else {
-                // Se tudo bater, apenas confirma
                 if(confirm('A contagem de comandas (baseado no total configurado) está correta. Deseja encerrar e arquivar o dia?')) resetarDadosDoDia();
             }
         });
         
-        // Eventos do Modal de Senha
         cancelarSenhaBtn.addEventListener('click', () => {
+// ... (código existente, sem alteração) ...
             senhaModal.style.display = 'none';
             acaoPendenteComSenha = null; 
             senhaInput.value = ''; 
         });
 
         confirmarSenhaBtn.addEventListener('click', () => {
+// ... (código existente, sem alteração) ...
             if (senhaInput.value === SENHA_ADMIN) {
                 senhaModal.style.display = 'none';
                 senhaInput.value = '';
-                if (typeof acaoPendenteComSenha === 'function') {
-                    acaoPendenteComSenha(); 
-                }
+                if (typeof acaoPendenteComSenha === 'function') { acaoPendenteComSenha(); }
                 acaoPendenteComSenha = null; 
-            } else {
-                alert('Senha incorreta!');
-            }
+            } else { alert('Senha incorreta!'); }
         });
 
-        // Eventos do Modal de Histórico Fiado
         historicoFiadoModalClose.addEventListener('click', () => {
+// ... (código existente, sem alteração) ...
             historicoFiadoModal.style.display = 'none';
         });
         
-        // Eventos de Backup/Restauração
         exportarDadosBtn.addEventListener('click', () => {
             const backupData = {
                 historico: historicoVendas,
-                fiado: clientesFiado
+                fiado: clientesFiado,
+                cadastro: cadastroClientes // NOVO
             };
             
-            if (Object.keys(historicoVendas).length === 0 && Object.keys(clientesFiado).length === 0) {
+            if (Object.keys(historicoVendas).length === 0 && Object.keys(clientesFiado).length === 0 && Object.keys(cadastroClientes).length === 0) {
                 alert('Não há dados para exportar.');
                 return;
             }
@@ -1430,36 +1287,42 @@
             const dataStr = JSON.stringify(backupData, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             const url = URL.createObjectURL(dataBlob);
-            
             const link = document.createElement('a');
             link.href = url;
             link.download = 'backup_pensao_completo.json';
-            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            
             alert('Backup exportado com sucesso!');
         });
         
         importarBtn.addEventListener('click', () => {
+// ... (código existente, sem alteração) ...
             importarDadosInput.click();
         });
 
         importarDadosInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
                     const dadosImportados = JSON.parse(event.target.result);
                     
-                    if (dadosImportados && typeof dadosImportados === 'object' && dadosImportados.hasOwnProperty('historico') && dadosImportados.hasOwnProperty('fiado')) {
-                        if (confirm('Deseja substituir o histórico e a lista de fiado por este backup? (Os dados do dia atual não serão afetados)')) {
-                            historicoVendas = dadosImportados.historico || {};
-                            clientesFiado = migrarEstruturaFiado(dadosImportados.fiado || {});
+                    // ATUALIZADO para verificar as 3 chaves
+                    if (dadosImportados && typeof dadosImportados === 'object' && 
+                        (dadosImportados.hasOwnProperty('historico') || dadosImportados.hasOwnProperty('fiado') || dadosImportados.hasOwnProperty('cadastro'))) {
+                        
+                        if (confirm('Deseja substituir seus dados por este backup? (Os dados do dia atual não serão afetados)')) {
+                            historicoVendas = dadosImportados.historico || historicoVendas;
+                            clientesFiado = migrarEstruturaFiado(dadosImportados.fiado || clientesFiado);
+                            cadastroClientes = dadosImportados.cadastro || cadastroClientes; // NOVO
+                            
+                            // NOVO: Após importar, faz a migração de fiado -> cadastro
+                            const migracaoPosImport = migrarClientesParaCadastro(clientesFiado, cadastroClientes);
+                            cadastroClientes = migracaoPosImport.cadastro;
+
                             salvarDados();
                             atualizarUI();
                             alert('Backup importado com sucesso!');
@@ -1471,14 +1334,14 @@
                     console.error('Erro ao importar backup:', error);
                     alert('Ocorreu um erro ao ler o arquivo de backup.');
                 } finally {
-                    e.target.value = null; // Limpa o input para permitir reimportar o mesmo arquivo
+                    e.target.value = null;
                 }
             };
             reader.readAsText(file);
         });
 
-        // Limpar Histórico Antigo (com senha)
         limparHistoricoBtn.addEventListener('click', () => {
+// ... (código existente, sem alteração) ...
             senhaModalMensagem.innerHTML = '<strong>Atenção!</strong> Esta ação vai apagar <strong>PERMANENTEMENTE</strong> todo o histórico de relatórios salvos.<br><br>Recomenda-se exportar um backup primeiro. Digite a senha para confirmar.';
             acaoPendenteComSenha = limparHistoricoAntigo; 
             senhaModal.style.display = 'flex';
@@ -1487,11 +1350,9 @@
 
         // Inicialização da aplicação
         document.addEventListener('DOMContentLoaded', () => {
-            // Garante que os dados migrados sejam salvos na primeira carga
-            salvarDados();
+// ... (código existente, sem alteração) ...
+            salvarDados(); // Salva os dados migrados na primeira carga
             atualizarUI();
-
-            // Fecha modais ao clicar fora
             window.addEventListener('click', (event) => {
                 if (event.target == senhaModal) {
                     senhaModal.style.display = 'none';
