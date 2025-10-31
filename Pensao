@@ -217,15 +217,15 @@
                                 </label>
                             </div>
                         </div>
-                        <!-- CAMPO FIADO ATUALIZADO COM TELEFONE OBRIGATÓRIO -->
+                        <!-- CAMPO FIADO ATUALIZADO COM AMBOS OBRIGATÓRIOS -->
                         <div id="campoClienteFiado" class="hidden space-y-3">
+                            <div>
+                                <label for="nomeClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Nome do Cliente (Obrigatório)</label>
+                                <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Digite o nome (obrigatório)">
+                            </div>
                             <div>
                                 <label for="telefoneClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Telefone do Cliente (Obrigatório)</label>
                                 <input type="tel" id="telefoneClienteFiado" class="input-field" placeholder="(21) 99999-8888">
-                            </div>
-                            <div>
-                                <label for="nomeClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Nome do Cliente (Opcional)</label>
-                                <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Digite o nome (opcional)">
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-full">
@@ -649,7 +649,6 @@
         };
         
         const arquivarVendasDoDia = () => {
-// ... (código existente, sem alteração) ...
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) return;
             const hoje = new Date();
             const chaveData = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
@@ -669,7 +668,6 @@
         };
 
         const resetarDadosDoDia = () => {
-// ... (código existente, sem alteração) ...
             arquivarVendasDoDia();
             vendasHoje = [];
             comandasHoje = [];
@@ -684,7 +682,6 @@
         }
 
         const limparHistoricoAntigo = () => {
-// ... (código existente, sem alteração) ...
             if (Object.keys(historicoVendas).length === 0) { alert('O histórico já está vazio.'); return; }
             historicoVendas = {};
             salvarDados();
@@ -693,7 +690,6 @@
         }
 
         const ordenarComandas = (a, b) => {
-// ... (código existente, sem alteração) ...
             const tipoA = a.charAt(0); const tipoB = b.charAt(0);
             const numA = parseInt(a.substring(1)); const numB = parseInt(b.substring(1));
             if (tipoA < tipoB) return -1; if (tipoA > tipoB) return 1;
@@ -701,7 +697,6 @@
         };
 
         const ordenarVendasPorComanda = (a, b) => {
-// ... (código existente, sem alteração) ...
             return ordenarComandas(a.comanda, b.comanda);
         };
 
@@ -709,7 +704,6 @@
         // --- LÓGICA DE RENDERIZAÇÃO ---
         
         const renderizarResumoDiario = () => {
-// ... (código existente, sem alteração) ...
             const totais = vendasHoje.reduce((acc, venda) => {
                 acc[venda.tipo] = (acc[venda.tipo] || 0) + venda.valor;
                 return acc;
@@ -728,7 +722,6 @@
         };
 
         const renderizarClientesFiado = () => {
-// ... (código existente, sem alteração) ...
             listaClientesFiadoEl.innerHTML = '';
             const chavesClientes = Object.keys(clientesFiado); 
             let totalGeral = 0; let clientesAtivos = 0; 
@@ -805,7 +798,6 @@
         };
 
         const renderizarVendasDoDia = () => {
-// ... (código existente, sem alteração) ...
             listaVendasHojeEl.innerHTML = '';
             comandasRegistradasEl.textContent = comandasHoje.length > 0 ? [...comandasHoje].sort(ordenarComandas).join(', ') : 'Nenhuma comanda registrada.';
             if (vendasHoje.length === 0) {
@@ -835,7 +827,6 @@
         };
 
         const renderizarSeletorHistorico = () => {
-// ... (código existente, sem alteração) ...
             seletorData.innerHTML = '';
             relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
             relatorioAcumuladoContainer.innerHTML = '';
@@ -860,7 +851,6 @@
         };
 
         const mostrarRelatorio = (dataKey) => {
-// ... (código existente, sem alteração) ...
             relatorioAcumuladoContainer.innerHTML = '';
             if (!dataKey || !historicoVendas[dataKey]) {
                 relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>'; return;
@@ -934,7 +924,6 @@
         };
 
         const mostrarRelatorioAcumulado = () => {
-// ... (código existente, sem alteração) ...
             relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
             seletorData.value = '';
             const dataInicio = dataInicioInput.value; const dataFim = dataFimInput.value;
@@ -987,7 +976,6 @@
         };
         
         const mostrarHistoricoFiado = (chaveCliente) => {
-// ... (código existente, sem alteração) ...
             const cliente = clientesFiado[chaveCliente]; if (!cliente) return;
             const nomeDisplay = cliente.nome || formatarTelefone(cliente.telefone) || chaveCliente;
             historicoFiadoModalTitulo.textContent = `Histórico de: ${nomeDisplay}`;
@@ -1027,7 +1015,6 @@
         // --- LÓGICA DE EVENTOS ---
         
         vendaForm.addEventListener('submit', (e) => {
-// ... (código existente, com uma adição) ...
             e.preventDefault();
             const valor = parseFloat(valorVendaInput.value);
             const numA = parseInt(numeroComandaAInput.value); const numB = parseInt(numeroComandaBInput.value);
@@ -1041,33 +1028,50 @@
             if (isNaN(valor) || valor <= 0) { alert('Por favor, insira um valor de venda válido.'); return; }
             if(comandasHoje.includes(comandaId)) { alert(`A comanda de número ${comandaId} já foi registrada hoje.`); return; } 
             const novaVenda = { comanda: comandaId, valor, tipo: tipoPagamento, data: transacaoId, transacaoId: transacaoId }; 
+            
             if (tipoPagamento === 'Fiado') {
                 const nomeCliente = nomeClienteFiadoInput.value.trim();
                 const telefoneClienteBruto = telefoneClienteFiadoInput.value.trim();
                 const telefoneCliente = limparTelefone(telefoneClienteBruto);
-                if (!telefoneCliente) { alert('Por favor, insira um telefone do cliente (obrigatório).'); telefoneClienteFiadoInput.focus(); return; } 
+                
+                // --- ATUALIZADO: Validações de nome e telefone ---
+                if (!telefoneCliente) { 
+                    alert('Por favor, insira um telefone do cliente (obrigatório).'); 
+                    telefoneClienteFiadoInput.focus();
+                    return; 
+                }
+                if (!nomeCliente) {
+                    alert('Por favor, insira um nome para o cliente (obrigatório).');
+                    nomeClienteFiadoInput.focus();
+                    return;
+                }
+                // --- Fim da atualização ---
+                
                 const chaveCliente = telefoneCliente;
                 novaVenda.clienteNome = nomeCliente;
                 novaVenda.clienteTelefone = telefoneCliente; 
+                
                 if (!clientesFiado[chaveCliente]) {
                     clientesFiado[chaveCliente] = { nome: nomeCliente, telefone: telefoneCliente, transacoes: [] };
                 }
-                if (nomeCliente) { clientesFiado[chaveCliente].nome = nomeCliente; }
+                // Atualiza o nome no registro de fiado (pode ter sido alterado)
+                clientesFiado[chaveCliente].nome = nomeCliente; 
+                
                 clientesFiado[chaveCliente].transacoes.push({
                     data: transacaoId, tipo: 'compra', valor: valor, comanda: comandaId, transacaoId: transacaoId
                 });
                 
-                // NOVO: Adiciona/atualiza no cadastro geral de clientes
-                if (nomeCliente && (!cadastroClientes[chaveCliente] || cadastroClientes[chaveCliente].nome !== nomeCliente)) {
+                // Adiciona/atualiza no cadastro geral de clientes
+                if (!cadastroClientes[chaveCliente] || cadastroClientes[chaveCliente].nome !== nomeCliente) {
                      cadastroClientes[chaveCliente] = { nome: nomeCliente, telefone: telefoneCliente };
-                } else if (!cadastroClientes[chaveCliente]) {
-                     cadastroClientes[chaveCliente] = { nome: '(Sem Nome)', telefone: telefoneCliente };
                 }
             }
+            
             vendasHoje.push(novaVenda);
             comandasHoje.push(comandaId); 
             salvarDados();
             atualizarUI();
+            
             vendaForm.reset();
             campoClienteFiado.classList.add('hidden');
             nomeClienteFiadoInput.required = false;
@@ -1078,33 +1082,48 @@
         });
         
         numeroComandaAInput.addEventListener('input', () => {
-// ... (código existente, sem alteração) ...
             numeroComandaBInput.disabled = !!numeroComandaAInput.value;
         });
         numeroComandaBInput.addEventListener('input', () => {
-// ... (código existente, sem alteração) ...
             numeroComandaAInput.disabled = !!numeroComandaBInput.value;
         });
 
+        // Exibe/oculta campos de fiado
         tipoPagamentoRadios.forEach(radio => radio.addEventListener('change', () => {
-// ... (código existente, sem alteração) ...
-            campoClienteFiado.classList.toggle('hidden', radio.value !== 'Fiado');
-            nomeClienteFiadoInput.required = false;
-            telefoneClienteFiadoInput.required = (radio.value === 'Fiado');
+            const isFiado = radio.value === 'Fiado';
+            campoClienteFiado.classList.toggle('hidden', !isFiado);
+            // --- ATUALIZADO: Ambos obrigatórios ---
+            nomeClienteFiadoInput.required = isFiado; 
+            telefoneClienteFiadoInput.required = isFiado;
         }));
         
-        // NOVO: Evento de input no telefone do fiado para autopreencher nome
-        telefoneClienteFiadoInput.addEventListener('input', (e) => {
-             const telLimpo = limparTelefone(e.target.value);
-             // Um pequeno delay para não verificar a cada dígito
-             setTimeout(() => {
-                if (cadastroClientes[telLimpo]) {
-                    nomeClienteFiadoInput.value = cadastroClientes[telLimpo].nome || '';
-                }
-             }, 100);
+
+        // REMOVIDO: Evento de input no telefone
+        
+        // NOVO: Evento de input no NOME do fiado para autopreencher o telefone
+        nomeClienteFiadoInput.addEventListener('input', (e) => {
+            const nomeDigitado = e.target.value.trim();
+            
+            if (nomeDigitado.length < 2) { // Não busca com menos de 2 caracteres
+                 telefoneClienteFiadoInput.value = ''; // Limpa se o nome for apagado
+                 return;
+            }
+
+            // Busca clientes que batem com o nome digitado
+            const clientesEncontrados = Object.values(cadastroClientes).filter(
+                cliente => cliente.nome.toLowerCase() === nomeDigitado.toLowerCase()
+            );
+
+            // Se encontrar exatamente UM cliente, autopreenche o telefone
+            if (clientesEncontrados.length === 1) {
+                telefoneClienteFiadoInput.value = formatarTelefone(clientesEncontrados[0].telefone);
+            } else {
+                // Se encontrar vários ou nenhum, limpa o campo de telefone
+                telefoneClienteFiadoInput.value = '';
+            }
         });
         
-        // NOVO: Evento para o formulário de cadastro de clientes
+        // Evento para o formulário de cadastro de clientes
         addClienteForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const nome = nomeClienteCadastroInput.value.trim();
@@ -1129,7 +1148,7 @@
             alert('Cliente adicionado ao cadastro!');
         });
         
-        // NOVO: Evento para remover cliente do cadastro geral
+        // Evento para remover cliente do cadastro geral
         listaClientesCadastradosEl.addEventListener('click', (e) => {
             const target = e.target.closest('.remover-cliente-cadastro-btn');
             if (!target) return;
@@ -1146,7 +1165,6 @@
 
 
         listaClientesFiadoEl.addEventListener('click', (e) => {
-// ... (código existente, sem alteração) ...
             const target = e.target.closest('button');
             if (!target) return;
             const clienteChave = target.dataset.clienteChave; 
@@ -1181,7 +1199,6 @@
         });
 
         listaVendasHojeEl.addEventListener('click', (e) => {
-// ... (código existente, sem alteração) ...
             const target = e.target.closest('.remover-venda-btn');
             if (!target) return;
             const index = parseInt(target.dataset.vendaIndex);
@@ -1210,7 +1227,6 @@
         });
 
         salvarConfigComandasBtn.addEventListener('click', () => {
-// ... (código existente, sem alteração) ...
             configComandas.maxA = parseInt(ultimaComandaAInput.value) || 0;
             configComandas.maxB = parseInt(ultimaComandaBInput.value) || 0;
             configComandas.trocoInicial = parseFloat(trocoInicialInput.value) || 0;
@@ -1220,7 +1236,6 @@
         });
 
         resetarDiaBtn.addEventListener('click', () => {
-// ... (código existente, sem alteração) ...
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) {
                 if(confirm('Nenhuma venda ou pagamento registrado. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
                 return;
@@ -1251,14 +1266,12 @@
         });
         
         cancelarSenhaBtn.addEventListener('click', () => {
-// ... (código existente, sem alteração) ...
             senhaModal.style.display = 'none';
             acaoPendenteComSenha = null; 
             senhaInput.value = ''; 
         });
 
         confirmarSenhaBtn.addEventListener('click', () => {
-// ... (código existente, sem alteração) ...
             if (senhaInput.value === SENHA_ADMIN) {
                 senhaModal.style.display = 'none';
                 senhaInput.value = '';
@@ -1268,7 +1281,6 @@
         });
 
         historicoFiadoModalClose.addEventListener('click', () => {
-// ... (código existente, sem alteração) ...
             historicoFiadoModal.style.display = 'none';
         });
         
@@ -1298,7 +1310,6 @@
         });
         
         importarBtn.addEventListener('click', () => {
-// ... (código existente, sem alteração) ...
             importarDadosInput.click();
         });
 
@@ -1310,16 +1321,14 @@
                 try {
                     const dadosImportados = JSON.parse(event.target.result);
                     
-                    // ATUALIZADO para verificar as 3 chaves
                     if (dadosImportados && typeof dadosImportados === 'object' && 
                         (dadosImportados.hasOwnProperty('historico') || dadosImportados.hasOwnProperty('fiado') || dadosImportados.hasOwnProperty('cadastro'))) {
                         
                         if (confirm('Deseja substituir seus dados por este backup? (Os dados do dia atual não serão afetados)')) {
                             historicoVendas = dadosImportados.historico || historicoVendas;
                             clientesFiado = migrarEstruturaFiado(dadosImportados.fiado || clientesFiado);
-                            cadastroClientes = dadosImportados.cadastro || cadastroClientes; // NOVO
+                            cadastroClientes = dadosImportados.cadastro || cadastroClientes; 
                             
-                            // NOVO: Após importar, faz a migração de fiado -> cadastro
                             const migracaoPosImport = migrarClientesParaCadastro(clientesFiado, cadastroClientes);
                             cadastroClientes = migracaoPosImport.cadastro;
 
@@ -1341,7 +1350,6 @@
         });
 
         limparHistoricoBtn.addEventListener('click', () => {
-// ... (código existente, sem alteração) ...
             senhaModalMensagem.innerHTML = '<strong>Atenção!</strong> Esta ação vai apagar <strong>PERMANENTEMENTE</strong> todo o histórico de relatórios salvos.<br><br>Recomenda-se exportar um backup primeiro. Digite a senha para confirmar.';
             acaoPendenteComSenha = limparHistoricoAntigo; 
             senhaModal.style.display = 'flex';
@@ -1350,7 +1358,6 @@
 
         // Inicialização da aplicação
         document.addEventListener('DOMContentLoaded', () => {
-// ... (código existente, sem alteração) ...
             salvarDados(); // Salva os dados migrados na primeira carga
             atualizarUI();
             window.addEventListener('click', (event) => {
