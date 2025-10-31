@@ -181,15 +181,15 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <label for="numeroComandaA" class="block text-sm font-medium text-gray-600 mb-1">Nº Amarela (A)</label>
-                                <input type="number" id="numeroComandaA" class="input-field" placeholder="Ex: 15">
+                                <input type="number" id="numeroComandaA" class="input-field" placeholder="Ex: 35">
                             </div>
                             <div>
                                 <label for="numeroComandaB" class="block text-sm font-medium text-gray-600 mb-1">Nº Branca (B)</label>
-                                <input type="number" id="numeroComandaB" class="input-field" placeholder="Ex: 100">
+                                <input type="number" id="numeroComandaB" class="input-field" placeholder="Ex: 102">
                             </div>
                             <div>
                                 <label for="valorVenda" class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
-                                <input type="number" id="valorVenda" step="0.01" class="input-field" placeholder="Ex: 25.50" required>
+                                <input type="number" id="valorVenda" step="0.01" class="input-field" placeholder="Ex: 18.00" required>
                             </div>
                         </div>
                         <div>
@@ -221,11 +221,11 @@
                         <div id="campoClienteFiado" class="hidden space-y-3">
                             <div>
                                 <label for="nomeClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Nome do Cliente (Obrigatório)</label>
-                                <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Digite o nome (obrigatório)">
+                                <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Ex: João da Silva">
                             </div>
                             <div>
                                 <label for="telefoneClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Telefone do Cliente (Obrigatório)</label>
-                                <input type="tel" id="telefoneClienteFiado" class="input-field" placeholder="(21) 99999-8888">
+                                <input type="tel" id="telefoneClienteFiado" class="input-field" placeholder="Ex: (21) 98765-4321">
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-full">
@@ -284,30 +284,39 @@
                     </div>
                 </div>
 
-                <!-- NOVO: Card de Configuração e Encerramento -->
+                <!-- Card de Configuração e Encerramento ATUALIZADO -->
                 <div class="card">
                     <h2 class="text-2xl font-bold text-gray-700 mb-3 flex items-center gap-2">
                         <i data-lucide="settings-2"></i>
                         Configurar e Encerrar Dia
                     </h2>
-                    <p class="text-sm text-gray-500 mb-4">Defina o valor inicial do caixa e a **quantidade total** de comandas que serão usadas no dia.</p>
+                    <p class="text-sm text-gray-500 mb-4">Defina o valor inicial do caixa e o **intervalo (início e fim)** de comandas que serão usadas no dia.</p>
                     
                     <div class="mb-3">
                         <label for="trocoInicialInput" class="block text-sm font-medium text-gray-600 mb-1">Valor Inicial do Caixa (Troco)</label>
-                        <input type="number" step="0.01" id="trocoInicialInput" class="input-field" placeholder="Ex: 50.00">
+                        <input type="number" step="0.01" id="trocoInicialInput" class="input-field" placeholder="Ex: 100.00">
                     </div>
 
+                     <!-- CAMPOS DE INTERVALO ATUALIZADOS -->
                      <div class="grid grid-cols-2 gap-4">
                         <div>
-                           <label for="ultimaComandaA" class="block text-sm font-medium text-gray-600 mb-1">Total de Amarelas (A)</label>
-                           <input type="number" id="ultimaComandaA" class="input-field" placeholder="Ex: 50">
+                           <label for="inicioComandaA" class="block text-sm font-medium text-gray-600 mb-1">Início Amarelas (A)</label>
+                           <input type="number" id="inicioComandaA" class="input-field" placeholder="Ex: 301">
                        </div>
                         <div>
-                           <label for="ultimaComandaB" class="block text-sm font-medium text-gray-600 mb-1">Total de Brancas (B)</label>
-                           <input type="number" id="ultimaComandaB" class="input-field" placeholder="Ex: 100">
+                           <label for="finalComandaA" class="block text-sm font-medium text-gray-600 mb-1">Final Amarelas (A)</label>
+                           <input type="number" id="finalComandaA" class="input-field" placeholder="Ex: 350">
+                       </div>
+                        <div>
+                           <label for="inicioComandaB" class="block text-sm font-medium text-gray-600 mb-1">Início Brancas (B)</label>
+                           <input type="number" id="inicioComandaB" class="input-field" placeholder="Ex: 101">
+                       </div>
+                        <div>
+                           <label for="finalComandaB" class="block text-sm font-medium text-gray-600 mb-1">Final Brancas (B)</label>
+                           <input type="number" id="finalComandaB" class="input-field" placeholder="Ex: 180">
                        </div>
                    </div>
-                    <button id="salvarConfigComandasBtn" class="btn btn-primary w-full mt-3"><i data-lucide="save"></i> Salvar Totais e Troco do Dia</button>
+                    <button id="salvarConfigComandasBtn" class="btn btn-primary w-full mt-3"><i data-lucide="save"></i> Salvar Intervalos e Troco</button>
                     <div class="mt-4 pt-4 border-t border-dashed">
                         <button id="resetarDiaBtn" class="btn btn-danger w-full mt-3">
                             <i data-lucide="power-off"></i>
@@ -343,11 +352,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label for="nomeClienteCadastro" class="block text-sm font-medium text-gray-600 mb-1">Nome</label>
-                                <input type="text" id="nomeClienteCadastro" class="input-field" placeholder="Nome completo" required>
+                                <input type="text" id="nomeClienteCadastro" class="input-field" placeholder="Ex: Maria Souza" required>
                             </div>
                             <div>
                                 <label for="telefoneClienteCadastro" class="block text-sm font-medium text-gray-600 mb-1">Telefone</label>
-                                <input type="tel" id="telefoneClienteCadastro" class="input-field" placeholder="(21) 99999-8888" required>
+                                <input type="tel" id="telefoneClienteCadastro" class="input-field" placeholder="Ex: (21) 91234-5678" required>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-full"><i data-lucide="user-plus"></i>Adicionar Cliente</button>
@@ -484,8 +493,13 @@
         const nomeClienteFiadoInput = document.getElementById('nomeClienteFiado');
         const telefoneClienteFiadoInput = document.getElementById('telefoneClienteFiado'); 
         const resetarDiaBtn = document.getElementById('resetarDiaBtn');
-        const ultimaComandaAInput = document.getElementById('ultimaComandaA'); 
-        const ultimaComandaBInput = document.getElementById('ultimaComandaB'); 
+        
+        // Elementos de Configuração ATUALIZADOS
+        const inicioComandaAInput = document.getElementById('inicioComandaA'); 
+        const finalComandaAInput = document.getElementById('finalComandaA'); 
+        const inicioComandaBInput = document.getElementById('inicioComandaB'); 
+        const finalComandaBInput = document.getElementById('finalComandaB'); 
+        
         const salvarConfigComandasBtn = document.getElementById('salvarConfigComandasBtn'); 
         const trocoInicialInput = document.getElementById('trocoInicialInput');
         
@@ -616,7 +630,11 @@
         let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || []; 
         let historicoVendas = JSON.parse(localStorage.getItem('historicoVendas')) || {};
         let pagamentosHoje = JSON.parse(localStorage.getItem('pagamentosHoje')) || []; 
-        let configComandas = JSON.parse(localStorage.getItem('configComandas')) || { maxA: 0, maxB: 0, trocoInicial: 0 }; 
+        
+        // Estrutura de Configuração ATUALIZADA
+        let configComandas = JSON.parse(localStorage.getItem('configComandas')) || { 
+            inicioA: 0, finalA: 0, inicioB: 0, finalB: 0, trocoInicial: 0 
+        }; 
 
         // Funções de formatação e salvamento
         const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -663,7 +681,13 @@
                 vendas: [...vendasHoje],
                 pagamentos: [...pagamentosHoje], 
                 trocoInicial: configComandas.trocoInicial,
-                ultimaComanda: { A: configComandas.maxA, B: configComandas.maxB }
+                // Salva o intervalo ATUALIZADO
+                intervaloComanda: { 
+                    A_inicio: configComandas.inicioA, 
+                    A_final: configComandas.finalA, 
+                    B_inicio: configComandas.inicioB, 
+                    B_final: configComandas.finalB 
+                }
             };
         };
 
@@ -672,9 +696,15 @@
             vendasHoje = [];
             comandasHoje = [];
             pagamentosHoje = []; 
-            configComandas = { maxA: 0, maxB: 0, trocoInicial: 0 }; 
-            ultimaComandaAInput.value = ''; 
-            ultimaComandaBInput.value = ''; 
+            // Reseta a configuração ATUALIZADA
+            configComandas = { inicioA: 0, finalA: 0, inicioB: 0, finalB: 0, trocoInicial: 0 }; 
+            
+            // Limpa os inputs ATUALIZADOS
+            inicioComandaAInput.value = ''; 
+            finalComandaAInput.value = ''; 
+            inicioComandaBInput.value = ''; 
+            finalComandaBInput.value = ''; 
+            
             trocoInicialInput.value = '';
             salvarDados();
             atualizarUI();
@@ -754,7 +784,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="number" step="0.01" class="input-field flex-grow" placeholder="Valor do pagamento">
+                        <input type="number" step="0.01" class="input-field flex-grow" placeholder="Ex: 20.00">
                         <button class="btn btn-primary text-sm flex-shrink-0 pagar-fiado-btn" data-cliente-chave="${chave}"><i data-lucide="check" class="w-4 h-4"></i>Pagar/Amortizar</button>
                         <button class="btn btn-danger text-sm flex-shrink-0 remover-cliente-btn" data-cliente-chave="${chave}"><i data-lucide="trash-2" class="w-4 h-4"></i>Quitar e Remover</button>
                     </div>`;
@@ -1006,9 +1036,12 @@
             renderizarCadastroClientes(); // NOVO
             renderizarVendasDoDia();
             renderizarSeletorHistorico();
+            // Popula os inputs de configuração ATUALIZADOS
             trocoInicialInput.value = configComandas.trocoInicial > 0 ? configComandas.trocoInicial : '';
-            ultimaComandaAInput.value = configComandas.maxA > 0 ? configComandas.maxA : '';
-            ultimaComandaBInput.value = configComandas.maxB > 0 ? configComandas.maxB : '';
+            inicioComandaAInput.value = configComandas.inicioA > 0 ? configComandas.inicioA : '';
+            finalComandaAInput.value = configComandas.finalA > 0 ? configComandas.finalA : '';
+            inicioComandaBInput.value = configComandas.inicioB > 0 ? configComandas.inicioB : '';
+            finalComandaBInput.value = configComandas.finalB > 0 ? configComandas.finalB : '';
             lucide.createIcons();
         };
 
@@ -1097,10 +1130,7 @@
             telefoneClienteFiadoInput.required = isFiado;
         }));
         
-
-        // REMOVIDO: Evento de input no telefone
-        
-        // NOVO: Evento de input no NOME do fiado para autopreencher o telefone
+        // Evento de input no NOME do fiado para autopreencher o telefone
         nomeClienteFiadoInput.addEventListener('input', (e) => {
             const nomeDigitado = e.target.value.trim();
             
@@ -1226,42 +1256,90 @@
             if (target) window.print();
         });
 
+        // Evento de Salvar Configuração ATUALIZADO
         salvarConfigComandasBtn.addEventListener('click', () => {
-            configComandas.maxA = parseInt(ultimaComandaAInput.value) || 0;
-            configComandas.maxB = parseInt(ultimaComandaBInput.value) || 0;
+            configComandas.inicioA = parseInt(inicioComandaAInput.value) || 0;
+            configComandas.finalA = parseInt(finalComandaAInput.value) || 0;
+            configComandas.inicioB = parseInt(inicioComandaBInput.value) || 0;
+            configComandas.finalB = parseInt(finalComandaBInput.value) || 0;
             configComandas.trocoInicial = parseFloat(trocoInicialInput.value) || 0;
+            
+            if ((configComandas.finalA > 0 && configComandas.finalA < configComandas.inicioA) || 
+                (configComandas.finalB > 0 && configComandas.finalB < configComandas.inicioB)) {
+                alert('Erro: O número final da comanda não pode ser menor que o número inicial.');
+                return;
+            }
+
             salvarDados();
-            alert('Totais de comandas e valor inicial salvos para o dia!');
+            alert('Intervalos de comandas e valor inicial salvos para o dia!');
             atualizarUI();
         });
 
+        // Evento de Encerrar Dia ATUALIZADO
         resetarDiaBtn.addEventListener('click', () => {
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) {
                 if(confirm('Nenhuma venda ou pagamento registrado. Deseja iniciar um novo dia mesmo assim?')) resetarDadosDoDia();
                 return;
             }
-            const totalEsperadoA = configComandas.maxA; const totalEsperadoB = configComandas.maxB; 
-            const totalRegistradoA = comandasHoje.filter(c => c.startsWith('A')).length; 
-            const totalRegistradoB = comandasHoje.filter(c => c.startsWith('B')).length; 
-            if ((totalRegistradoA > 0 && totalEsperadoA === 0) || (totalRegistradoB > 0 && totalEsperadoB === 0)) {
-                 alert('Você registrou comandas, mas não salvou os totais esperados (A e B). Por favor, defina os totais e clique em "Salvar Totais do Dia" antes de encerrar.');
-                 ultimaComandaAInput.focus();
-                 return;
+
+            const { inicioA, finalA, inicioB, finalB } = configComandas;
+
+            // Validação de configuração
+            if ((finalA > 0 && inicioA === 0) || (finalA === 0 && inicioA > 0)) {
+                alert('Por favor, preencha o Início e o Final para as comandas Amarelas, ou deixe ambos em 0.');
+                return;
             }
-            const diferencaA = totalEsperadoA - totalRegistradoA;
-            const diferencaB = totalEsperadoB - totalRegistradoB; 
+             if ((finalB > 0 && inicioB === 0) || (finalB === 0 && inicioB > 0)) {
+                alert('Por favor, preencha o Início e o Final para as comandas Brancas, ou deixe ambos em 0.');
+                return;
+            }
+            if (finalA > 0 && finalA < inicioA) { alert('Erro: A comanda Amarela final é menor que a inicial.'); return; }
+            if (finalB > 0 && finalB < inicioB) { alert('Erro: A comanda Branca final é menor que a inicial.'); return; }
+
+            const registradasA = new Set(comandasHoje.filter(c => c.startsWith('A')).map(c => parseInt(c.substring(1))));
+            const registradasB = new Set(comandasHoje.filter(c => c.startsWith('B')).map(c => parseInt(c.substring(1))));
+
+            const faltandoA = [];
+            const extrasA = [];
+            if (finalA > 0) { // Se um intervalo foi definido
+                for (let i = inicioA; i <= finalA; i++) {
+                    if (!registradasA.has(i)) faltandoA.push(`A${i}`);
+                }
+                registradasA.forEach(num => {
+                    if (num < inicioA || num > finalA) extrasA.push(`A${num}`);
+                });
+            } else if (registradasA.size > 0) { // Sem intervalo, mas registrou
+                registradasA.forEach(num => extrasA.push(`A${num} (não esperada)`));
+            }
+
+            const faltandoB = [];
+            const extrasB = [];
+             if (finalB > 0) { // Se um intervalo foi definido
+                for (let i = inicioB; i <= finalB; i++) {
+                    if (!registradasB.has(i)) faltandoB.push(`B${i}`);
+                }
+                registradasB.forEach(num => {
+                    if (num < inicioB || num > finalB) extrasB.push(`B${num}`);
+                });
+            } else if (registradasB.size > 0) { // Sem intervalo, mas registrou
+                registradasB.forEach(num => extrasB.push(`B${num} (não esperada)`));
+            }
+
             let mensagensErro = [];
-            if (diferencaA > 0) { mensagensErro.push(`Faltam ${diferencaA} comanda(s) Amarela(s)`); }
-            else if (diferencaA < 0) { mensagensErro.push(`Existem ${-diferencaA} comanda(s) Amarela(s) a mais`); }
-            if (diferencaB > 0) { mensagensErro.push(`Faltam ${diferencaB} comanda(s) Branca(s)`); }
-            else if (diferencaB < 0) { mensagensErro.push(`Existem ${-diferencaB} comanda(s) Branca(s) a mais`); }
+            if (faltandoA.length > 0) mensagensErro.push(`Faltando Amarelas: ${faltandoA.join(', ')}`);
+            if (extrasA.length > 0) mensagensErro.push(`Extras Amarelas: ${extrasA.join(', ')}`);
+            if (faltandoB.length > 0) mensagensErro.push(`Faltando Brancas: ${faltandoB.join(', ')}`);
+            if (extrasB.length > 0) mensagensErro.push(`Extras Brancas: ${extrasB.join(', ')}`);
+
             if (mensagensErro.length > 0) {
-                senhaModalMensagem.textContent = `A contagem de comandas não bate com o total configurado: ${mensagensErro.join(', ')}. Digite a senha para forçar o encerramento.`;
+                senhaModalMensagem.textContent = `Inconsistências nas comandas: ${mensagensErro.join('; ')}. Digite a senha para forçar o encerramento.`;
                 acaoPendenteComSenha = resetarDadosDoDia; 
                 senhaModal.style.display = 'flex';
                 senhaInput.focus();
             } else {
-                if(confirm('A contagem de comandas (baseado no total configurado) está correta. Deseja encerrar e arquivar o dia?')) resetarDadosDoDia();
+                if (confirm('A sequência de comandas (baseado no intervalo configurado) está correta. Deseja encerrar e arquivar o dia?')) {
+                    resetarDadosDoDia();
+                }
             }
         });
         
