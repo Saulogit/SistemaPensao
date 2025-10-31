@@ -74,7 +74,6 @@
         .btn-outline-danger:hover {
             background-color: #fef2f2;
         }
-        /* NOVO BOTÃO DE HISTÓRICO */
         .btn-outline-secondary {
             background-color: transparent;
             color: #4b5563;
@@ -98,6 +97,12 @@
             border-color: #2563eb;
             box-shadow: 0 0 0 2px #bfdbfe;
         }
+        /* Desabilitado */
+        .input-field:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
+        
         /* Estilo para Modal genérico */
         .modal {
             display: none; /* Oculto por padrão */
@@ -175,15 +180,12 @@
                         <!-- CAMPOS DA COMANDA ATUALIZADOS -->
                         <div class="grid grid-cols-3 gap-4">
                             <div>
-                                <label for="tipoComanda" class="block text-sm font-medium text-gray-600 mb-1">Tipo</label>
-                                <select id="tipoComanda" class="input-field">
-                                    <option value="A">Amarela (A)</option>
-                                    <option value="B">Branca (B)</option>
-                                </select>
+                                <label for="numeroComandaA" class="block text-sm font-medium text-gray-600 mb-1">Nº Amarela (A)</label>
+                                <input type="number" id="numeroComandaA" class="input-field" placeholder="Ex: 15">
                             </div>
                             <div>
-                                <label for="numeroComanda" class="block text-sm font-medium text-gray-600 mb-1">Nº</label>
-                                <input type="number" id="numeroComanda" class="input-field" placeholder="Ex: 15" required>
+                                <label for="numeroComandaB" class="block text-sm font-medium text-gray-600 mb-1">Nº Branca (B)</label>
+                                <input type="number" id="numeroComandaB" class="input-field" placeholder="Ex: 100">
                             </div>
                             <div>
                                 <label for="valorVenda" class="block text-sm font-medium text-gray-600 mb-1">Valor (R$)</label>
@@ -353,7 +355,7 @@
                             Histórico e Relatórios
                         </h2>
                         
-                        <!-- NOVO: Seção de Relatório Acumulado -->
+                        <!-- Seção de Relatório Acumulado -->
                         <div class="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-700 mb-3">Relatório por Período</h3>
                             <div class="grid grid-cols-2 gap-3 mb-3">
@@ -429,7 +431,7 @@
         </div>
     </div>
 
-    <!-- NOVO: Modal de Histórico de Fiado -->
+    <!-- Modal de Histórico de Fiado -->
     <div id="historicoFiadoModal" class="modal" style="display: none;">
         <div class="modal-content">
             <span id="historicoFiadoModalClose" class="modal-close">&times;</span>
@@ -447,8 +449,9 @@
         // Elementos da UI
         const vendaForm = document.getElementById('vendaForm');
         const valorVendaInput = document.getElementById('valorVenda');
-        const tipoComandaSelect = document.getElementById('tipoComanda'); 
-        const numeroComandaInput = document.getElementById('numeroComanda');
+        // CAMPOS DE COMANDA ATUALIZADOS
+        const numeroComandaAInput = document.getElementById('numeroComandaA');
+        const numeroComandaBInput = document.getElementById('numeroComandaB');
         const tipoPagamentoRadios = document.querySelectorAll('input[name="tipoPagamento"]');
         const campoClienteFiado = document.getElementById('campoClienteFiado');
         const nomeClienteFiadoInput = document.getElementById('nomeClienteFiado');
@@ -485,7 +488,7 @@
         const importarDadosInput = document.getElementById('importarDadosInput');
         const limparHistoricoBtn = document.getElementById('limparHistoricoBtn'); 
 
-        // NOVO: Relatório Acumulado
+        // Relatório Acumulado
         const dataInicioInput = document.getElementById('dataInicio');
         const dataFimInput = document.getElementById('dataFim');
         const calcularPeriodoBtn = document.getElementById('calcularPeriodoBtn');
@@ -499,7 +502,7 @@
         const cancelarSenhaBtn = document.getElementById('cancelarSenhaBtn');
         const confirmarSenhaBtn = document.getElementById('confirmarSenhaBtn');
 
-        // NOVO: Modal de Histórico Fiado
+        // Modal de Histórico Fiado
         const historicoFiadoModal = document.getElementById('historicoFiadoModal');
         const historicoFiadoModalClose = document.getElementById('historicoFiadoModalClose');
         const historicoFiadoModalTitulo = document.getElementById('historicoFiadoModalTitulo');
@@ -949,7 +952,7 @@
             lucide.createIcons();
         };
 
-        // NOVO: Função para calcular e mostrar relatório acumulado
+        // Função para calcular e mostrar relatório acumulado
         const mostrarRelatorioAcumulado = () => {
             // Limpa o relatório diário ao ver um acumulado
             relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
@@ -1107,8 +1110,23 @@
         vendaForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const valor = parseFloat(valorVendaInput.value);
-            const tipoComanda = tipoComandaSelect.value; 
-            const numeroComanda = parseInt(numeroComandaInput.value); 
+            
+            // NOVO: Lógica para os dois inputs
+            const numA = parseInt(numeroComandaAInput.value);
+            const numB = parseInt(numeroComandaBInput.value);
+            
+            let tipoComanda, numeroComanda;
+            if (!isNaN(numA) && numA > 0) {
+                tipoComanda = 'A';
+                numeroComanda = numA;
+            } else if (!isNaN(numB) && numB > 0) {
+                tipoComanda = 'B';
+                numeroComanda = numB;
+            } else {
+                alert('Por favor, insira um número de comanda válido (A ou B).');
+                return;
+            }
+            
             const tipoPagamento = document.querySelector('input[name="tipoPagamento"]:checked').value;
             
             const comandaId = tipoComanda + numeroComanda; 
@@ -1116,7 +1134,6 @@
 
             // Validações
             if (isNaN(valor) || valor <= 0) { alert('Por favor, insira um valor de venda válido.'); return; }
-            if (isNaN(numeroComanda) || numeroComanda <= 0) { alert('Por favor, insira um número de comanda válido.'); return; }
             if(comandasHoje.includes(comandaId)) { alert(`A comanda de número ${comandaId} já foi registrada hoje.`); return; } 
 
             const novaVenda = { 
@@ -1171,9 +1188,22 @@
             campoClienteFiado.classList.add('hidden');
             nomeClienteFiadoInput.required = false;
             telefoneClienteFiadoInput.required = false;
-            numeroComandaInput.focus();
+            // Limpa e reabilita os inputs de comanda
+            numeroComandaAInput.value = '';
+            numeroComandaBInput.value = '';
+            numeroComandaAInput.disabled = false;
+            numeroComandaBInput.disabled = false;
+            numeroComandaAInput.focus();
         });
         
+        // NOVO: Lógica para desabilitar inputs de comanda
+        numeroComandaAInput.addEventListener('input', () => {
+            numeroComandaBInput.disabled = !!numeroComandaAInput.value;
+        });
+        numeroComandaBInput.addEventListener('input', () => {
+            numeroComandaAInput.disabled = !!numeroComandaBInput.value;
+        });
+
         // Exibe/oculta campos de fiado
         tipoPagamentoRadios.forEach(radio => radio.addEventListener('change', () => {
             campoClienteFiado.classList.toggle('hidden', radio.value !== 'Fiado');
@@ -1292,7 +1322,7 @@
         // Mudar data do seletor de histórico
         seletorData.addEventListener('change', (e) => mostrarRelatorio(e.target.value));
 
-        // NOVO: Calcular relatório por período
+        // Calcular relatório por período
         calcularPeriodoBtn.addEventListener('click', mostrarRelatorioAcumulado);
 
         // Imprimir relatório
