@@ -235,41 +235,84 @@
                     </form>
                 </div>
 
-                <!-- Card de Fechamento de Caixa -->
+                <!-- Card de Fechamento de Caixa (ESTRUTURA ALTERADA) -->
                 <div class="card">
                     <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                         <i data-lucide="archive"></i>
                         Fechamento do Dia
                     </h2>
+                    <!-- ESTRUTURA ALTERADA (ORDEM INVERTIDA) -->
                     <div class="space-y-3 text-lg">
-                        <div class="flex justify-between items-center font-bold text-blue-600 border-b pb-2">
-                            <span>Vendas Totais do Dia:</span>
-                            <span id="totalVendasHoje">R$ 0,00</span>
+
+                        <!-- Vendas do Dia (Ordem Alterada) -->
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1">Vendas do Dia</h3>
+                        <div class="flex justify-between items-center text-sm text-gray-600 pl-6">
+                            <span><i data-lucide="dollar-sign" class="w-4 h-4 inline-block mr-1 text-green-500"></i>Dinheiro (Vendas):</span>
+                            <span id="totalVendasDinheiro">R$ 0,00</span>
                         </div>
-                        <div class="flex justify-between items-center text-gray-600">
-                            <span><i data-lucide="dollar-sign" class="w-4 h-4 inline-block mr-2 text-green-500"></i>Dinheiro:</span>
-                            <span id="totalDinheiro">R$ 0,00</span>
+                        <div class="flex justify-between items-center text-sm text-gray-600 pl-6">
+                            <span><i data-lucide="credit-card" class="w-4 h-4 inline-block mr-1 text-blue-500"></i>Cartão (Vendas):</span>
+                            <span id="totalVendasCartao">R$ 0,00</span>
                         </div>
-                        <div class="flex justify-between items-center text-gray-600">
-                            <span><i data-lucide="credit-card" class="w-4 h-4 inline-block mr-2 text-blue-500"></i>Cartão:</span>
-                            <span id="totalCartao">R$ 0,00</span>
+                        <div class="flex justify-between items-center text-sm text-gray-600 pl-6">
+                            <span><i data-lucide="smartphone" class="w-4 h-4 inline-block mr-1 text-purple-500"></i>Pix (Vendas):</span>
+                            <span id="totalVendasPix">R$ 0,00</span>
                         </div>
-                        <div class="flex justify-between items-center text-gray-600">
-                            <span><i data-lucide="smartphone" class="w-4 h-4 inline-block mr-2 text-purple-600"></i>Pix:</span>
-                            <span id="totalPix">R$ 0,00</span>
-                        </div>
-                         <div class="flex justify-between items-center text-red-600 font-medium">
-                            <span><i data-lucide="book-user" class="w-4 h-4 inline-block mr-2"></i>Fiado do Dia:</span>
+                        <div class="flex justify-between items-center text-sm text-red-600 font-medium pl-6">
+                            <span><i data-lucide="book-user" class="w-4 h-4 inline-block mr-2"></i>Fiado (Vendas):</span>
                             <span id="totalFiadoHoje">R$ 0,00</span>
                         </div>
-                        <!-- TEXTO ATUALIZADO -->
-                        <div class="flex justify-between items-center text-green-600 font-medium">
-                            <span><i data-lucide="piggy-bank" class="w-4 h-4 inline-block mr-2"></i>Pgs outros dias:</span>
+                        <div class="flex justify-between items-center font-bold text-blue-600 border-t pt-2 mt-2">
+                            <span>Total de Vendas do Dia:</span>
+                            <span id="totalVendasHoje">R$ 0,00</span>
+                        </div>
+
+                        <!-- Pgs outros dias (Ordem Alterada) -->
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2 border-b pb-1 pt-3">Pgs outros dias</h3>
+                        <div class="flex justify-between items-center text-sm text-gray-600 pl-6">
+                            <span><i data-lucide="dollar-sign" class="w-4 h-4 inline-block mr-1 text-green-500"></i>Dinheiro:</span>
+                            <span id="totalPagamentosFiadoDinheiro">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm text-gray-600 pl-6">
+                            <span><i data-lucide="credit-card" class="w-4 h-4 inline-block mr-1 text-blue-500"></i>Cartão:</span>
+                            <span id="totalPagamentosFiadoCartao">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm text-gray-600 pl-6">
+                            <span><i data-lucide="smartphone" class="w-4 h-4 inline-block mr-1 text-purple-500"></i>Pix:</span>
+                            <span id="totalPagamentosFiadoPix">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-green-600 font-medium border-t pt-2 mt-2">
+                            <span><i data-lucide="piggy-bank" class="w-4 h-4 inline-block mr-2"></i>Total Pgs outros dias:</span>
                             <span id="totalPagamentosFiadoHoje">R$ 0,00</span>
                         </div>
+                    
+                        <!-- Total Acumulado (Ordem Alterada) -->
+                        <div class="border-t pt-3 mt-3">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Acumulado (Vendas + Pgs)</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center text-gray-800 font-bold text-base">
+                                    <span><i data-lucide="dollar-sign" class="w-4 h-4 inline-block mr-2 text-green-600"></i>Total Dinheiro:</span>
+                                    <span id="acumuladoDinheiro">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between items-center text-gray-800 font-bold text-base">
+                                    <span><i data-lucide="credit-card" class="w-4 h-4 inline-block mr-2 text-blue-600"></i>Total Cartão:</span>
+                                    <span id="acumuladoCartao">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between items-center text-gray-800 font-bold text-base">
+                                    <span><i data-lucide="smartphone" class="w-4 h-4 inline-block mr-2 text-purple-600"></i>Total Pix:</span>
+                                    <span id="acumuladoPix">R$ 0,00</span>
+                                </div>
+                                <!-- NOVO TOTAL GERAL ACUMULADO -->
+                                <div class="flex justify-between items-center text-black font-extrabold text-lg border-t pt-2 mt-2">
+                                    <span><i data-lucide="database" class="w-4 h-4 inline-block mr-2"></i>Total Geral (Din + Crt + Pix):</span>
+                                    <span id="acumuladoTotalGeral">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    <!-- FIM DA ESTRUTURA ALTERADA -->
 
-                    <!-- CAMPO DE PREVISÃO ATUALIZADO -->
+                    <!-- CAMPO DE PREVISÃO (Lógica já estava correta) -->
                     <div class="mt-4 pt-4 border-t border-dashed">
                         <h3 class="text-lg font-semibold text-gray-700 mb-2">Previsão do Caixa (Dinheiro)</h3>
                         <div class="bg-blue-50 p-4 rounded-lg text-center">
@@ -367,7 +410,7 @@
                     <!-- Lista de Clientes Cadastrados -->
                     <h3 class="text-lg font-semibold text-gray-600 mb-2">Clientes Salvos</h3>
                     <div id="listaClientesCadastrados" class="space-y-2 max-h-60 overflow-y-auto pr-2">
-                        <p class="text-center text-gray-500 py-4">Nenhum cliente cadastrado manualmente.</p>
+                        <p class="text-center text-gray-500 py-4">Nenhum cliente cadastrado manually.</p>
                     </div>
                 </div>
 
@@ -505,11 +548,8 @@
         const salvarConfigComandasBtn = document.getElementById('salvarConfigComandasBtn'); 
         const trocoInicialInput = document.getElementById('trocoInicialInput');
         
-        // Displays de resumo
+        // Displays de resumo (REFERÊNCIAS REMOVIDAS: totalDinheiroEl, totalCartaoEl, totalPixEl)
         const totalVendasHojeEl = document.getElementById('totalVendasHoje');
-        const totalDinheiroEl = document.getElementById('totalDinheiro');
-        const totalCartaoEl = document.getElementById('totalCartao');
-        const totalPixEl = document.getElementById('totalPix');
         const totalFiadoHojeEl = document.getElementById('totalFiadoHoje');
         const totalPagamentosFiadoHojeEl = document.getElementById('totalPagamentosFiadoHoje');
         const totalCaixaDinheiroEl = document.getElementById('totalCaixaDinheiro');
@@ -735,33 +775,58 @@
 
         // --- LÓGICA DE RENDERIZAÇÃO ---
         
+        // FUNÇÃO ATUALIZADA (Req 1, 2, 3)
         const renderizarResumoDiario = () => {
-            const totais = vendasHoje.reduce((acc, venda) => {
+            // 1. Totais de Vendas
+            const totaisVendas = vendasHoje.reduce((acc, venda) => {
                 acc[venda.tipo] = (acc[venda.tipo] || 0) + venda.valor;
                 return acc;
             }, { 'Dinheiro': 0, 'Cartão': 0, 'Pix': 0, 'Fiado': 0 });
             
-            const totalVendas = totais.Dinheiro + totais.Cartão + totais.Pix + totais.Fiado;
-            
-            const totalPagamentosFiado = pagamentosHoje.reduce((acc, pag) => acc + pag.valor, 0);
-            
-            // NOVO: Calcula pagamentos de fiado APENAS em dinheiro
-            const totalPagamentosFiadoEmDinheiro = pagamentosHoje
-                .filter(p => p.tipo === 'Dinheiro')
-                .reduce((acc, pag) => acc + pag.valor, 0);
+            const totalVendas = totaisVendas.Dinheiro + totaisVendas.Cartão + totaisVendas.Pix + totaisVendas.Fiado;
 
-            const totalDinheiroVendas = totais.Dinheiro;
-            
-            // ATUALIZADO: Usa apenas pagamentos em dinheiro na previsão
-            const totalDinheiroCaixa = (configComandas.trocoInicial || 0) + totalDinheiroVendas + totalPagamentosFiadoEmDinheiro; 
+            // 2. Totais de Pagamentos (Pgs outros dias)
+            const totaisPagamentos = pagamentosHoje.reduce((acc, pag) => {
+                const tipo = pag.tipo || 'Dinheiro'; // 'Dinheiro' como padrão
+                acc[tipo] = (acc[tipo] || 0) + pag.valor;
+                acc.total = (acc.total || 0) + pag.valor;
+                return acc;
+            }, { 'Dinheiro': 0, 'Cartão': 0, 'Pix': 0, total: 0 });
 
+            // 3. Totais Acumulados
+            const acumuladoDinheiro = totaisVendas.Dinheiro + totaisPagamentos.Dinheiro;
+            const acumuladoCartao = totaisVendas.Cartão + totaisPagamentos.Cartão;
+            const acumuladoPix = totaisVendas.Pix + totaisPagamentos.Pix;
+            // NOVO: Total Geral Acumulado
+            const acumuladoTotalGeral = acumuladoDinheiro + acumuladoCartao + acumuladoPix;
+
+            // 4. Previsão do Caixa (Dinheiro)
+            const totalDinheiroCaixa = (configComandas.trocoInicial || 0) + totaisVendas.Dinheiro + totaisPagamentos.Dinheiro; 
+
+            // Atualiza a UI
             totalVendasHojeEl.textContent = formatarMoeda(totalVendas);
-            totalDinheiroEl.textContent = formatarMoeda(totalDinheiroVendas);
-            totalCartaoEl.textContent = formatarMoeda(totais.Cartão);
-            totalPixEl.textContent = formatarMoeda(totais.Pix);
-            totalFiadoHojeEl.textContent = formatarMoeda(totais.Fiado);
-            totalPagamentosFiadoHojeEl.textContent = formatarMoeda(totalPagamentosFiado); // Continua mostrando o total
-            totalCaixaDinheiroEl.textContent = formatarMoeda(totalDinheiroCaixa); // Agora está correto
+            
+            // ADICIONADO: Atualiza o breakdown das vendas
+            document.getElementById('totalVendasDinheiro').textContent = formatarMoeda(totaisVendas.Dinheiro);
+            document.getElementById('totalVendasCartao').textContent = formatarMoeda(totaisVendas.Cartão);
+            document.getElementById('totalVendasPix').textContent = formatarMoeda(totaisVendas.Pix);
+            
+            totalFiadoHojeEl.textContent = formatarMoeda(totaisVendas.Fiado);
+            
+            // Pgs outros dias (discriminado)
+            totalPagamentosFiadoHojeEl.textContent = formatarMoeda(totaisPagamentos.total);
+            document.getElementById('totalPagamentosFiadoDinheiro').textContent = formatarMoeda(totaisPagamentos.Dinheiro);
+            document.getElementById('totalPagamentosFiadoCartao').textContent = formatarMoeda(totaisPagamentos.Cartão);
+            document.getElementById('totalPagamentosFiadoPix').textContent = formatarMoeda(totaisPagamentos.Pix);
+            
+            // Acumulados
+            document.getElementById('acumuladoDinheiro').textContent = formatarMoeda(acumuladoDinheiro);
+            document.getElementById('acumuladoCartao').textContent = formatarMoeda(acumuladoCartao);
+            document.getElementById('acumuladoPix').textContent = formatarMoeda(acumuladoPix);
+            document.getElementById('acumuladoTotalGeral').textContent = formatarMoeda(acumuladoTotalGeral); // NOVO
+
+            // Previsão do Caixa
+            totalCaixaDinheiroEl.textContent = formatarMoeda(totalDinheiroCaixa);
         };
 
         const renderizarClientesFiado = () => {
@@ -905,6 +970,7 @@
             dataFimInput.value = datasSalvas.length > 0 ? datasSalvas[0] : formatarDataInput(new Date().toISOString());
         };
 
+        // FUNÇÃO ATUALIZADA (ORDEM INVERTIDA)
         const mostrarRelatorio = (dataKey) => {
             relatorioAcumuladoContainer.innerHTML = '';
             if (!dataKey || !historicoVendas[dataKey]) {
@@ -929,15 +995,13 @@
             if (vendas.length === 0) { vendasHtml = '<li class="text-center text-gray-500 p-2">Nenhuma venda registrada.</li>'; }
             
             let pagamentosHtml = '';
-            // NOVO: Resumo de pagamentos por tipo
+            // Resumo de pagamentos por tipo
             const resumoPagamentos = (pagamentos || []).reduce((acc, pag) => {
                 const tipo = pag.tipo || 'Dinheiro'; // 'Dinheiro' como padrão para backups antigos
                 acc[tipo] = (acc[tipo] || 0) + pag.valor;
                 acc.total = (acc.total || 0) + pag.valor;
                 return acc;
             }, { Dinheiro: 0, Cartão: 0, Pix: 0, total: 0 });
-
-            let totalPagamentos = resumoPagamentos.total; // Pega o total do novo resumo
 
             if (pagamentos && pagamentos.length > 0) {
                 pagamentos.sort((a, b) => new Date(a.data) - new Date(b.data));
@@ -956,32 +1020,55 @@
                 }).join('');
             } else { pagamentosHtml = '<li class="text-center text-gray-500 p-2">Nenhum pagamento recebido.</li>'; }
             
-            // ATUALIZADO: Usa apenas pagamentos em Dinheiro
+            // Cálculos
             const totalDinheiroRelatorio = (trocoInicial || 0) + resumo.Dinheiro + (resumoPagamentos.Dinheiro || 0);
+            const acumuladoDinheiro = resumo.Dinheiro + resumoPagamentos.Dinheiro;
+            const acumuladoCartao = resumo.Cartão + resumoPagamentos.Cartão;
+            const acumuladoPix = resumo.Pix + resumoPagamentos.Pix;
+            // NOVO: Total Geral Acumulado
+            const acumuladoTotalGeral = acumuladoDinheiro + acumuladoCartao + acumuladoPix;
             
-            // TEXTOS ATUALIZADOS
+            // HTML ATUALIZADO (ORDEM INVERTIDA)
             relatorioContainer.innerHTML = `
                 <div class="space-y-3">
                     <h3 class="text-xl font-bold text-gray-800">Relatório de ${formatarData(relatorio.data)}</h3>
+                    
+                    <!-- Vendas (veio primeiro) -->
                     <div class="space-y-2 border-t pt-2">
-                        <div class="flex justify-between font-bold text-blue-600"><p>Venda Total (Bruta):</p><p>${formatarMoeda(resumo.total)}</p></div>
+                        <h4 class="font-semibold text-gray-700">Vendas do Dia</h4>
+                        <div class="flex justify-between text-sm pl-4"><p>Dinheiro (Vendas):</p><p>${formatarMoeda(resumo.Dinheiro)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Cartão (Vendas):</p><p>${formatarMoeda(resumo.Cartão)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Pix (Vendas):</p><p>${formatarMoeda(resumo.Pix)}</p></div>
+                        <div class="flex justify-between text-sm text-red-600 pl-4"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
+                        <div class="flex justify-between font-bold text-blue-600 border-t pt-1 mt-1"><p>Venda Total (Bruta):</p><p>${formatarMoeda(resumo.total)}</p></div>
                         <div class="flex justify-between text-sm text-gray-700"><p>Valor Inicial (Troco):</p><p>${formatarMoeda(trocoInicial || 0)}</p></div>
-                        <div class="flex justify-between text-sm"><p>Dinheiro:</p><p>${formatarMoeda(resumo.Dinheiro)}</p></div>
-                        <div class="flex justify-between text-sm"><p>Cartão:</p><p>${formatarMoeda(resumo.Cartão)}</p></div>
-                        <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(resumo.Pix)}</p></div>
-                        <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
                     </div>
-                    <!-- ATUALIZADO: Detalhamento dos pagamentos -->
+
+                    <!-- Detalhamento dos pagamentos (veio depois) -->
                     <div class="space-y-2 border-t pt-2">
-                        <div class="flex justify-between font-bold text-green-600"><p>Total Pgs outros dias:</p><p>${formatarMoeda(resumoPagamentos.total)}</p></div>
+                        <h4 class="font-semibold text-gray-700">Pgs outros dias</h4>
                         <div class="flex justify-between text-sm pl-4"><p>Dinheiro:</p><p>${formatarMoeda(resumoPagamentos.Dinheiro)}</p></div>
                         <div class="flex justify-between text-sm pl-4"><p>Cartão:</p><p>${formatarMoeda(resumoPagamentos.Cartão)}</p></div>
                         <div class="flex justify-between text-sm pl-4"><p>Pix:</p><p>${formatarMoeda(resumoPagamentos.Pix)}</p></div>
+                        <div class="flex justify-between font-bold text-green-600 border-t pt-1 mt-1"><p>Total Pgs outros dias:</p><p>${formatarMoeda(resumoPagamentos.total)}</p></div>
                     </div>
+
+                    <!-- Acumulados -->
+                    <div class="space-y-2 border-t pt-2">
+                        <h4 class="font-semibold text-gray-700">Total Acumulado (Vendas + Pgs)</h4>
+                        <div class="flex justify-between text-sm font-medium"><p>Total Dinheiro:</p><p>${formatarMoeda(acumuladoDinheiro)}</p></div>
+                        <div class="flex justify-between text-sm font-medium"><p>Total Cartão:</p><p>${formatarMoeda(acumuladoCartao)}</p></div>
+                        <div class="flex justify-between text-sm font-medium"><p>Total Pix:</p><p>${formatarMoeda(acumuladoPix)}</p></div>
+                        <div class="flex justify-between font-bold text-black border-t pt-1 mt-1"><p>Total Geral (Din + Crt + Pix):</p><p>${formatarMoeda(acumuladoTotalGeral)}</p></div>
+                    </div>
+
+                    <!-- Previsão de Caixa -->
                     <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded">
                         <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro (Final):</p><p>${formatarMoeda(totalDinheiroRelatorio)}</p></div>
                         <p class="text-xs text-blue-600">(Valor Inicial + Vendas em Dinheiro + Pgs outros dias em Dinheiro)</p>
                     </div>
+
+                    <!-- Detalhes das Vendas/Pagamentos (sem mudança) -->
                     <div class="border-t pt-2">
                         <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2">${vendasHtml}</ul>
@@ -996,6 +1083,7 @@
             lucide.createIcons();
         };
 
+        // FUNÇÃO ATUALIZADA (ORDEM INVERTIDA)
         const mostrarRelatorioAcumulado = () => {
             relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>';
             seletorData.value = '';
@@ -1004,13 +1092,14 @@
             const dataInicioObj = new Date(dataInicio + 'T00:00:00'); const dataFimObj = new Date(dataFim + 'T23:59:59');
             if (dataFimObj < dataInicioObj) { alert('A data final não pode ser anterior à data inicial.'); return; }
             
-            // ATUALIZADO: Totais acumulados com detalhamento de pagamento
+            // Totais acumulados com detalhamento de pagamento
             const totaisAcumulados = { 
-                vendaBruta: 0, trocoInicialTotal: 0, dinheiro: 0, cartao: 0, pix: 0, fiado: 0, 
-                pagamentosFiado: 0, 
-                pagamentosFiadoDinheiro: 0, // NOVO
-                pagamentosFiadoCartao: 0,  // NOVO
-                pagamentosFiadoPix: 0,     // NOVO
+                vendaBruta: 0, trocoInicialTotal: 0, 
+                vendasDinheiro: 0, vendasCartao: 0, vendasPix: 0, vendasFiado: 0, 
+                pagamentosFiadoTotal: 0, 
+                pagamentosFiadoDinheiro: 0, 
+                pagamentosFiadoCartao: 0,
+                pagamentosFiadoPix: 0,
                 diasContados: 0 
             };
 
@@ -1021,17 +1110,17 @@
                     totaisAcumulados.diasContados++;
                     totaisAcumulados.vendaBruta += relatorio.resumo.total || 0;
                     totaisAcumulados.trocoInicialTotal += relatorio.trocoInicial || 0;
-                    totaisAcumulados.dinheiro += relatorio.resumo.Dinheiro || 0;
-                    totaisAcumulados.cartao += relatorio.resumo.Cartão || 0;
-                    totaisAcumulados.pix += relatorio.resumo.Pix || 0;
-                    totaisAcumulados.fiado += relatorio.resumo.Fiado || 0;
+                    totaisAcumulados.vendasDinheiro += relatorio.resumo.Dinheiro || 0;
+                    totaisAcumulados.vendasCartao += relatorio.resumo.Cartão || 0;
+                    totaisAcumulados.vendasPix += relatorio.resumo.Pix || 0;
+                    totaisAcumulados.vendasFiado += relatorio.resumo.Fiado || 0;
                     
-                    // ATUALIZADO: Lógica de acumulação de pagamentos
+                    // Lógica de acumulação de pagamentos
                     if (relatorio.pagamentos && relatorio.pagamentos.length > 0) {
                         relatorio.pagamentos.forEach(pag => {
                             const tipo = pag.tipo || 'Dinheiro'; // Padrão
                             const valor = pag.valor || 0;
-                            totaisAcumulados.pagamentosFiado += valor;
+                            totaisAcumulados.pagamentosFiadoTotal += valor;
                             if (tipo === 'Dinheiro') totaisAcumulados.pagamentosFiadoDinheiro += valor;
                             else if (tipo === 'Cartão') totaisAcumulados.pagamentosFiadoCartao += valor;
                             else if (tipo === 'Pix') totaisAcumulados.pagamentosFiadoPix += valor;
@@ -1044,29 +1133,50 @@
                  return;
             }
             
-            // ATUALIZADO: Usa apenas pagamentos em Dinheiro
-            const totalDinheiroGerado = totaisAcumulados.trocoInicialTotal + totaisAcumulados.dinheiro + totaisAcumulados.pagamentosFiadoDinheiro;
+            // Cálculos
+            const totalDinheiroGerado = totaisAcumulados.trocoInicialTotal + totaisAcumulados.vendasDinheiro + totaisAcumulados.pagamentosFiadoDinheiro;
+            const acumuladoDinheiro = totaisAcumulados.vendasDinheiro + totaisAcumulados.pagamentosFiadoDinheiro;
+            const acumuladoCartao = totaisAcumulados.vendasCartao + totaisAcumulados.pagamentosFiadoCartao;
+            const acumuladoPix = totaisAcumulados.vendasPix + totaisAcumulados.pagamentosFiadoPix;
+            // NOVO: Total Geral Acumulado
+            const acumuladoTotalGeral = acumuladoDinheiro + acumuladoCartao + acumuladoPix;
             
-            // TEXTOS ATUALIZADOS
+            // HTML ATUALIZADO (ORDEM INVERTIDA)
             relatorioAcumuladoContainer.innerHTML = `
                 <div class="border-t pt-4">
                     <h3 class="text-xl font-bold text-gray-800">Relatório Acumulado</h3>
                     <p class="text-sm text-gray-500 mb-3">De ${formatarData(dataInicioObj.toISOString())} até ${formatarData(dataFimObj.toISOString())} (${totaisAcumulados.diasContados} dias)</p>
+                    
+                    <!-- Vendas (veio primeiro) -->
                     <div class="space-y-2 border-t pt-2">
-                        <div class="flex justify-between font-bold text-blue-600"><p>Venda Total (Bruta):</p><p>${formatarMoeda(totaisAcumulados.vendaBruta)}</p></div>
+                        <h4 class="font-semibold text-gray-700">Vendas do Período</h4>
+                        <div class="flex justify-between text-sm pl-4"><p>Dinheiro (Vendas):</p><p>${formatarMoeda(totaisAcumulados.vendasDinheiro)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Cartão (Vendas):</p><p>${formatarMoeda(totaisAcumulados.vendasCartao)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Pix (Vendas):</p><p>${formatarMoeda(totaisAcumulados.vendasPix)}</p></div>
+                        <div class="flex justify-between text-sm text-red-600 pl-4"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(totaisAcumulados.vendasFiado)}</p></div>
+                        <div class="flex justify-between font-bold text-blue-600 border-t pt-1 mt-1"><p>Venda Total (Bruta):</p><p>${formatarMoeda(totaisAcumulados.vendaBruta)}</p></div>
                         <div class="flex justify-between text-sm text-gray-700"><p>Total Valor Inicial (Troco):</p><p>${formatarMoeda(totaisAcumulados.trocoInicialTotal)}</p></div>
-                        <div class="flex justify-between text-sm"><p>Dinheiro (Vendas):</p><p>${formatarMoeda(totaisAcumulados.dinheiro)}</p></div>
-                        <div class="flex justify-between text-sm"><p>Cartão:</p><p>${formatarMoeda(totaisAcumulados.cartao)}</p></div>
-                        <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(totaisAcumulados.pix)}</p></div>
-                        <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(totaisAcumulados.fiado)}</p></div>
                     </div>
-                    <!-- ATUALIZADO: Detalhamento dos pagamentos acumulados -->
+
+                    <!-- Pgs outros dias (veio depois) -->
                     <div class="space-y-2 border-t pt-2">
-                        <div class="flex justify-between font-bold text-green-600"><p>Total Pgs outros dias:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiado)}</p></div>
+                         <h4 class="font-semibold text-gray-700">Pgs outros dias</h4>
                         <div class="flex justify-between text-sm pl-4"><p>Dinheiro:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoDinheiro)}</p></div>
                         <div class="flex justify-between text-sm pl-4"><p>Cartão:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoCartao)}</p></div>
                         <div class="flex justify-between text-sm pl-4"><p>Pix:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoPix)}</p></div>
+                        <div class="flex justify-between font-bold text-green-600 border-t pt-1 mt-1"><p>Total Pgs outros dias:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoTotal)}</p></div>
                     </div>
+
+                    <!-- Acumulados -->
+                    <div class="space-y-2 border-t pt-2">
+                        <h4 class="font-semibold text-gray-700">Total Acumulado (Vendas + Pgs)</h4>
+                        <div class="flex justify-between text-sm font-medium"><p>Total Dinheiro:</p><p>${formatarMoeda(acumuladoDinheiro)}</p></div>
+                        <div class="flex justify-between text-sm font-medium"><p>Total Cartão:</p><p>${formatarMoeda(acumuladoCartao)}</p></div>
+                        <div class="flex justify-between text-sm font-medium"><p>Total Pix:</p><p>${formatarMoeda(acumuladoPix)}</p></div>
+                        <div class="flex justify-between font-bold text-black border-t pt-1 mt-1"><p>Total Geral (Din + Crt + Pix):</p><p>${formatarMoeda(acumuladoTotalGeral)}</p></div>
+                    </div>
+                    
+                    <!-- Previsão de Caixa -->
                     <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded mt-2">
                         <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro Gerado:</p><p>${formatarMoeda(totalDinheiroGerado)}</p></div>
                         <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pgs outros dias em Dinheiro)</p>
@@ -1335,7 +1445,7 @@
                 });
                 
                 // ATUALIZAÇÃO 2: Salva a forma de pagamento na transação
-                clientesFiado[clienteChave].transacoes.push({ 
+                clientesFiado[chaveCliente].transacoes.push({ 
                     data: dataPagamento, 
                     tipo: 'pagamento', 
                     valor: -valorPago,
