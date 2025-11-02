@@ -272,7 +272,8 @@
                     <div class="mt-4 pt-4 border-t border-dashed">
                         <h3 class="text-lg font-semibold text-gray-700 mb-2">Previsão do Caixa (Dinheiro)</h3>
                         <div class="bg-blue-50 p-4 rounded-lg text-center">
-                            <p class="text-sm text-blue-700">Valor Inicial (Troco) + Vendas em Dinheiro + Pagamentos de Fiado</p>
+                            <!-- Texto da previsão ATUALIZADO -->
+                            <p class="text-sm text-blue-700">Troco Inicial + Vendas (Dinheiro) + Pagamentos Fiado (Dinheiro)</p>
                             <p id="totalCaixaDinheiro" class="text-3xl font-bold text-blue-900 mt-2">R$ 0,00</p>
                             <p class="text-xs text-gray-500 mt-2">Confira este valor com o dinheiro físico na sua gaveta.</p>
                         </div>
@@ -738,17 +739,28 @@
                 acc[venda.tipo] = (acc[venda.tipo] || 0) + venda.valor;
                 return acc;
             }, { 'Dinheiro': 0, 'Cartão': 0, 'Pix': 0, 'Fiado': 0 });
+            
             const totalVendas = totais.Dinheiro + totais.Cartão + totais.Pix + totais.Fiado;
+            
             const totalPagamentosFiado = pagamentosHoje.reduce((acc, pag) => acc + pag.valor, 0);
+            
+            // NOVO: Calcula pagamentos de fiado APENAS em dinheiro
+            const totalPagamentosFiadoEmDinheiro = pagamentosHoje
+                .filter(p => p.tipo === 'Dinheiro')
+                .reduce((acc, pag) => acc + pag.valor, 0);
+
             const totalDinheiroVendas = totais.Dinheiro;
-            const totalDinheiroCaixa = (configComandas.trocoInicial || 0) + totalDinheiroVendas + totalPagamentosFiado; 
+            
+            // ATUALIZADO: Usa apenas pagamentos em dinheiro na previsão
+            const totalDinheiroCaixa = (configComandas.trocoInicial || 0) + totalDinheiroVendas + totalPagamentosFiadoEmDinheiro; 
+
             totalVendasHojeEl.textContent = formatarMoeda(totalVendas);
             totalDinheiroEl.textContent = formatarMoeda(totalDinheiroVendas);
             totalCartaoEl.textContent = formatarMoeda(totais.Cartão);
             totalPixEl.textContent = formatarMoeda(totais.Pix);
             totalFiadoHojeEl.textContent = formatarMoeda(totais.Fiado);
-            totalPagamentosFiadoHojeEl.textContent = formatarMoeda(totalPagamentosFiado);
-            totalCaixaDinheiroEl.textContent = formatarMoeda(totalDinheiroCaixa);
+            totalPagamentosFiadoHojeEl.textContent = formatarMoeda(totalPagamentosFiado); // Continua mostrando o total
+            totalCaixaDinheiroEl.textContent = formatarMoeda(totalDinheiroCaixa); // Agora está correto
         };
 
         const renderizarClientesFiado = () => {
@@ -772,6 +784,8 @@
                 clienteDiv.className = 'border rounded-lg p-4 space-y-3';
                 const nomeDisplay = dividaObj.nome || (dividaObj.telefone ? "(Sem Nome)" : chave);
                 const telefoneDisplay = formatarTelefone(dividaObj.telefone);
+                
+                // ATUALIZADO: HTML do formulário de pagamento
                 clienteDiv.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
@@ -784,9 +798,13 @@
                         </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="number" step="0.01" class="input-field flex-grow" placeholder="Ex: 20.00">
-                        <button class="btn btn-primary text-sm flex-shrink-0 pagar-fiado-btn" data-cliente-chave="${chave}"><i data-lucide="check" class="w-4 h-4"></i>Pagar/Amortizar</button>
-                        <button class="btn btn-danger text-sm flex-shrink-0 remover-cliente-btn" data-cliente-chave="${chave}"><i data-lucide="trash-2" class="w-4 h-4"></i>Quitar e Remover</button>
+                        <input type="number" step="0.01" class="input-field flex-grow sm:w-1/3" placeholder="Ex: 20.00">
+                        <select class="input-field flex-grow sm:w-1/3 pagamento-fiado-tipo">
+                            <option value="Dinheiro" selected>Dinheiro</option>
+                            <option value="Cartão">Cartão</option>
+                            <option value="Pix">Pix</option>
+                        </select>
+                        <button class="btn btn-primary text-sm flex-shrink-0 sm:w-1/3 pagar-fiado-btn" data-cliente-chave="${chave}"><i data-lucide="check" class="w-4 h-4"></i>Pagar/Amortizar</button>
                     </div>`;
                 listaClientesFiadoEl.appendChild(clienteDiv);
             });
@@ -902,25 +920,38 @@
                 </li>`;
             }).join('');
             if (vendas.length === 0) { vendasHtml = '<li class="text-center text-gray-500 p-2">Nenhuma venda registrada.</li>'; }
+            
             let pagamentosHtml = '';
-            let totalPagamentos = 0;
+            // NOVO: Resumo de pagamentos por tipo
+            const resumoPagamentos = (pagamentos || []).reduce((acc, pag) => {
+                const tipo = pag.tipo || 'Dinheiro'; // 'Dinheiro' como padrão para backups antigos
+                acc[tipo] = (acc[tipo] || 0) + pag.valor;
+                acc.total = (acc.total || 0) + pag.valor;
+                return acc;
+            }, { Dinheiro: 0, Cartão: 0, Pix: 0, total: 0 });
+
+            let totalPagamentos = resumoPagamentos.total; // Pega o total do novo resumo
+
             if (pagamentos && pagamentos.length > 0) {
                 pagamentos.sort((a, b) => new Date(a.data) - new Date(b.data));
                 pagamentosHtml = pagamentos.map(pag => {
-                    totalPagamentos += pag.valor;
+                    const tipoPagamento = pag.tipo || 'Dinheiro'; // Padrão
                     const telFormatado = pag.telefone ? `(${formatarTelefone(pag.telefone)})` : '';
                     const horaPagamento = formatarHora(pag.data);
                     return `
                     <li class="flex justify-between items-center p-2 even:bg-gray-50">
                         <div>
                             <span><strong class="text-gray-800">${pag.cliente}</strong> ${telFormatado}</span>
-                            <span class="text-xs text-gray-500 block">às ${horaPagamento}</span>
+                            <span class="text-xs text-gray-500 block">${tipoPagamento} às ${horaPagamento}</span>
                         </div>
                         <span class="font-semibold text-green-600">${formatarMoeda(pag.valor)}</span>
                     </li>`;
                 }).join('');
             } else { pagamentosHtml = '<li class="text-center text-gray-500 p-2">Nenhum pagamento recebido.</li>'; }
-            const totalDinheiroRelatorio = (trocoInicial || 0) + resumo.Dinheiro + totalPagamentos;
+            
+            // ATUALIZADO: Usa apenas pagamentos em Dinheiro
+            const totalDinheiroRelatorio = (trocoInicial || 0) + resumo.Dinheiro + (resumoPagamentos.Dinheiro || 0);
+            
             relatorioContainer.innerHTML = `
                 <div class="space-y-3">
                     <h3 class="text-xl font-bold text-gray-800">Relatório de ${formatarData(relatorio.data)}</h3>
@@ -932,12 +963,16 @@
                         <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(resumo.Pix)}</p></div>
                         <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
                     </div>
+                    <!-- ATUALIZADO: Detalhamento dos pagamentos -->
                     <div class="space-y-2 border-t pt-2">
-                        <div class="flex justify-between font-bold text-green-600"><p>Pagamentos de Fiado Recebidos:</p><p>${formatarMoeda(totalPagamentos)}</p></div>
+                        <div class="flex justify-between font-bold text-green-600"><p>Total Pagamentos Fiado:</p><p>${formatarMoeda(resumoPagamentos.total)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Dinheiro:</p><p>${formatarMoeda(resumoPagamentos.Dinheiro)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Cartão:</p><p>${formatarMoeda(resumoPagamentos.Cartão)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Pix:</p><p>${formatarMoeda(resumoPagamentos.Pix)}</p></div>
                     </div>
                     <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded">
                         <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro (Final):</p><p>${formatarMoeda(totalDinheiroRelatorio)}</p></div>
-                        <p class="text-xs text-blue-600">(Valor Inicial + Vendas em Dinheiro + Pagamentos Recebidos)</p>
+                        <p class="text-xs text-blue-600">(Valor Inicial + Vendas em Dinheiro + Pagamentos Fiado em Dinheiro)</p>
                     </div>
                     <div class="border-t pt-2">
                         <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
@@ -960,7 +995,17 @@
             if (!dataInicio || !dataFim) { alert('Por favor, selecione data de início e fim.'); return; }
             const dataInicioObj = new Date(dataInicio + 'T00:00:00'); const dataFimObj = new Date(dataFim + 'T23:59:59');
             if (dataFimObj < dataInicioObj) { alert('A data final não pode ser anterior à data inicial.'); return; }
-            const totaisAcumulados = { vendaBruta: 0, trocoInicialTotal: 0, dinheiro: 0, cartao: 0, pix: 0, fiado: 0, pagamentosFiado: 0, diasContados: 0 };
+            
+            // ATUALIZADO: Totais acumulados com detalhamento de pagamento
+            const totaisAcumulados = { 
+                vendaBruta: 0, trocoInicialTotal: 0, dinheiro: 0, cartao: 0, pix: 0, fiado: 0, 
+                pagamentosFiado: 0, 
+                pagamentosFiadoDinheiro: 0, // NOVO
+                pagamentosFiadoCartao: 0,  // NOVO
+                pagamentosFiadoPix: 0,     // NOVO
+                diasContados: 0 
+            };
+
             for (const dataKey in historicoVendas) {
                 const relatorio = historicoVendas[dataKey];
                 const dataRelatorio = new Date(relatorio.data);
@@ -972,8 +1017,17 @@
                     totaisAcumulados.cartao += relatorio.resumo.Cartão || 0;
                     totaisAcumulados.pix += relatorio.resumo.Pix || 0;
                     totaisAcumulados.fiado += relatorio.resumo.Fiado || 0;
+                    
+                    // ATUALIZADO: Lógica de acumulação de pagamentos
                     if (relatorio.pagamentos && relatorio.pagamentos.length > 0) {
-                        totaisAcumulados.pagamentosFiado += relatorio.pagamentos.reduce((acc, pag) => acc + pag.valor, 0);
+                        relatorio.pagamentos.forEach(pag => {
+                            const tipo = pag.tipo || 'Dinheiro'; // Padrão
+                            const valor = pag.valor || 0;
+                            totaisAcumulados.pagamentosFiado += valor;
+                            if (tipo === 'Dinheiro') totaisAcumulados.pagamentosFiadoDinheiro += valor;
+                            else if (tipo === 'Cartão') totaisAcumulados.pagamentosFiadoCartao += valor;
+                            else if (tipo === 'Pix') totaisAcumulados.pagamentosFiadoPix += valor;
+                        });
                     }
                 }
             }
@@ -981,7 +1035,10 @@
                  relatorioAcumuladoContainer.innerHTML = `<div class="border rounded-lg p-4 bg-gray-50 text-center text-gray-600">Nenhum relatório encontrado no período de ${formatarData(dataInicioObj.toISOString())} até ${formatarData(dataFimObj.toISOString())}.</div>`;
                  return;
             }
-            const totalDinheiroGerado = totaisAcumulados.trocoInicialTotal + totaisAcumulados.dinheiro + totaisAcumulados.pagamentosFiado;
+            
+            // ATUALIZADO: Usa apenas pagamentos em Dinheiro
+            const totalDinheiroGerado = totaisAcumulados.trocoInicialTotal + totaisAcumulados.dinheiro + totaisAcumulados.pagamentosFiadoDinheiro;
+            
             relatorioAcumuladoContainer.innerHTML = `
                 <div class="border-t pt-4">
                     <h3 class="text-xl font-bold text-gray-800">Relatório Acumulado</h3>
@@ -994,12 +1051,16 @@
                         <div class="flex justify-between text-sm"><p>Pix:</p><p>${formatarMoeda(totaisAcumulados.pix)}</p></div>
                         <div class="flex justify-between text-sm text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(totaisAcumulados.fiado)}</p></div>
                     </div>
+                    <!-- ATUALIZADO: Detalhamento dos pagamentos acumulados -->
                     <div class="space-y-2 border-t pt-2">
-                        <div class="flex justify-between font-bold text-green-600"><p>Pagamentos de Fiado Recebidos:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiado)}</p></div>
+                        <div class="flex justify-between font-bold text-green-600"><p>Total Pagamentos Fiado:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiado)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Dinheiro:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoDinheiro)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Cartão:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoCartao)}</p></div>
+                        <div class="flex justify-between text-sm pl-4"><p>Pix:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoPix)}</p></div>
                     </div>
                     <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded mt-2">
                         <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro Gerado:</p><p>${formatarMoeda(totalDinheiroGerado)}</p></div>
-                        <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pagamentos Recebidos)</p>
+                        <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pagamentos Fiado em Dinheiro)</p>
                     </div>
                 </div>
             `;
@@ -1194,37 +1255,64 @@
         });
 
 
+        // ATUALIZADO: Event listener para pagamento de fiado
         listaClientesFiadoEl.addEventListener('click', (e) => {
             const target = e.target.closest('button');
             if (!target) return;
             const clienteChave = target.dataset.clienteChave; 
+            
             if (target.classList.contains('ver-historico-btn')) {
-                mostrarHistoricoFiado(clienteChave); return;
+                mostrarHistoricoFiado(clienteChave); 
+                return;
             }
+
             if (target.classList.contains('pagar-fiado-btn')) {
-                const inputValor = target.parentElement.querySelector('input');
-                const valorPago = parseFloat(inputValor.value);
-                if (isNaN(valorPago) || valorPago <= 0) { alert('Valor de pagamento inválido.'); return; }
+                const container = target.closest('.flex-col');
+                const inputValor = container.querySelector('input[type="number"]');
+                const selectTipo = container.querySelector('.pagamento-fiado-tipo');
+                
+                let valorPago = parseFloat(inputValor.value);
+                const tipoPagamento = selectTipo.value;
+                const dividaAtual = calcularDividaCliente(clienteChave);
                 const nomeParaRelatorio = clientesFiado[clienteChave].nome || clienteChave;
+
+                if (isNaN(valorPago) || valorPago <= 0) {
+                    // Se o valor estiver vazio, assume quitação total
+                    if (confirm(`Nenhum valor inserido. Deseja QUITAR o saldo total de ${formatarMoeda(dividaAtual)} para "${nomeParaRelatorio}"?`)) {
+                        valorPago = dividaAtual;
+                    } else {
+                        return;
+                    }
+                }
+                
+                if (valorPago < 0.01) { alert('Valor de pagamento inválido.'); return; }
+                
+                // Lógica de quitação (substitui o botão 'remover')
+                // Usamos 0.001 para evitar problemas de ponto flutuante
+                if (valorPago >= (dividaAtual - 0.001)) { 
+                    if (confirm(`O valor de ${formatarMoeda(valorPago)} é igual ou maior que a dívida (${formatarMoeda(dividaAtual)}). Deseja quitar a dívida e zerar o saldo?`)) {
+                        valorPago = dividaAtual; // Garante que o pagamento seja exatamente o valor da dívida
+                    } else {
+                        return; // Usuário cancelou
+                    }
+                }
+
                 const telefoneCliente = clientesFiado[clienteChave].telefone || (clienteChave.match(/^[0-9() -]+$/) ? clienteChave : '');
                 const dataPagamento = new Date().toISOString();
-                pagamentosHoje.push({ cliente: nomeParaRelatorio, telefone: telefoneCliente, valor: valorPago, data: dataPagamento });
+                
+                // Adiciona o TIPO ao objeto do pagamento
+                pagamentosHoje.push({ 
+                    cliente: nomeParaRelatorio, 
+                    telefone: telefoneCliente, 
+                    valor: valorPago, 
+                    tipo: tipoPagamento, // NOVO
+                    data: dataPagamento 
+                });
+                
                 clientesFiado[clienteChave].transacoes.push({ data: dataPagamento, tipo: 'pagamento', valor: -valorPago });
                 salvarDados(); 
                 atualizarUI();
                 inputValor.value = ''; 
-            } else if (target.classList.contains('remover-cliente-btn')) {
-                const nomeParaRelatorio = clientesFiado[clienteChave].nome || clienteChave;
-                const valorQuitado = calcularDividaCliente(clienteChave);
-                if (valorQuitado < 0.01) { alert('Este cliente não possui dívidas para quitar.'); return; }
-                if (confirm(`Tem certeza que deseja quitar a dívida de ${formatarMoeda(valorQuitado)} para "${nomeParaRelatorio}"?`)) {
-                    const telefoneCliente = clientesFiado[clienteChave].telefone || (clienteChave.match(/^[0-9() -]+$/) ? clienteChave : '');
-                    const dataPagamento = new Date().toISOString();
-                    pagamentosHoje.push({ cliente: nomeParaRelatorio, telefone: telefoneCliente, valor: valorQuitado, data: dataPagamento });
-                    clientesFiado[clienteChave].transacoes.push({ data: dataPagamento, tipo: 'pagamento', valor: -valorQuitado });
-                    salvarDados();
-                    atualizarUI();
-                }
             }
         });
 
