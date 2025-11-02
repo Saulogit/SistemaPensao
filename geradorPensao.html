@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Demo - Sistema de Gestão</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-xl w-full bg-white p-8 rounded-lg shadow-lg text-center">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+            <i data-lucide="database" class="h-8 w-8 text-blue-600"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-3">Gerador de Dados de Demonstração</h1>
+        <p class="text-gray-600 text-lg mb-6">
+            Clique no botão abaixo para gerar um arquivo <strong>backup_pensao_demo.json</strong>.
+            Este arquivo contém 30 dias de relatórios, clientes e dados de fiado fictícios.
+        </p>
+        <p class="text-sm text-gray-500 mb-8">
+            Depois de baixar, abra seu sistema de gestão principal e use a função "Importar Backup" para carregar esses dados.
+        </p>
+
+        <button id="gerarDemoBtn" class="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors text-lg">
+            <i data-lucide="download"></i>
+            Gerar Dados de Demonstração (30 Dias)
+        </button>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- Funções Auxiliares ---
+        const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const randomFloat = (min, max) => parseFloat((Math.random() * (max - min) + min).toFixed(2));
+        const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const limparTelefone = (tel) => (tel || '').replace(/\D/g, '');
+
+        // Lista de nomes fictícios
+        const NOMES = [
+            "Ana Silva", "Bruno Costa", "Carla Dias", "Daniel Moreira", "Elisa Fernandes", 
+            "Fábio Guedes", "Gabriela Lima", "Heitor Matos", "Isabela Nunes", "João Pedro",
+            "Karen Rocha", "Lucas Mendes", "Maria Oliveira", "Nelson Antunes", "Otávio Barros",
+            "Patrícia Soares", "Ricardo Almeida", "Sandra Tavares", "Tiago Martins", "Vanessa Reis"
+        ];
+
+        // Gera telefone (ex: 21988776655)
+        const gerarTelefone = () => `219${randomInt(7000, 9999)}${randomInt(1000, 9999)}`;
+
+        // --- Geradores de Dados ---
+
+        /**
+         * Gera o Cadastro de Clientes e a lista inicial de Fiado
+         */
+        function gerarCadastroEFiado() {
+            const cadastro = {};
+            const fiado = {};
+            
+            NOMES.forEach((nome) => {
+                const telLimpo = limparTelefone(gerarTelefone());
+                cadastro[telLimpo] = { nome: nome, telefone: telLimpo };
+
+                // 50% de chance de ser um cliente devedor
+                if (Math.random() < 0.5) {
+                    const numCompras = randomInt(1, 4);
+                    const transacoes = [];
+                    let saldo = 0;
+
+                    for (let i = 0; i < numCompras; i++) {
+                        // Data da transação (nos últimos 30 dias)
+                        const dataCompra = new Date();
+                        dataCompra.setDate(dataCompra.getDate() - randomInt(2, 30));
+                        const valorCompra = randomFloat(15, 45);
+                        saldo += valorCompra;
+                        
+                        transacoes.push({
+                            data: dataCompra.toISOString(),
+                            tipo: 'compra',
+                            valor: valorCompra,
+                            comanda: `A${randomInt(100, 200)}`,
+                            transacaoId: `tx-${Date.now()}-${i}`
+                        });
+                    }
+                    
+                    // 30% de chance de ter feito um pagamento
+                    if (saldo > 0 && Math.random() < 0.3) {
+                         const dataPag = new Date();
+                         dataPag.setDate(dataPag.getDate() - randomInt(1, 15));
+                         const valorPag = randomFloat(20, saldo * 0.5); // Paga parte
+                         transacoes.push({
+                             data: dataPag.toISOString(),
+                             tipo: 'pagamento',
+                             valor: -valorPag,
+                             forma: 'Dinheiro'
+                         });
+                    }
+
+                    fiado[telLimpo] = {
+                        nome: nome,
+                        telefone: telLimpo,
+                        transacoes: transacoes
+                    };
+                }
+            });
+            return { cadastro, fiado };
+        }
+
+        /**
+         * Gera 30 dias de relatórios históricos
+         */
+        function gerarHistorico(cadastroClientes) {
+            const historico = {};
+            const clientesKeys = Object.keys(cadastroClientes);
+
+            for (let i = 1; i <= 30; i++) { // Loop de 30 dias
+                const dataRelatorio = new Date();
+                dataRelatorio.setDate(dataRelatorio.getDate() - i); // Subtrai 'i' dias
+                
+                const chaveData = `${dataRelatorio.getFullYear()}-${String(dataRelatorio.getMonth() + 1).padStart(2, '0')}-${String(dataRelatorio.getDate()).padStart(2, '0')}`;
+                
+                const vendas = [];
+                const pagamentos = [];
+                const resumo = { 'Dinheiro': 0, 'Cartão': 0, 'Pix': 0, 'Fiado': 0, 'total': 0 };
+                const trocoInicial = 100.00;
+                
+                // 1. Gerar Vendas do Dia (entre 15 e 40 vendas)
+                const numVendas = randomInt(15, 40);
+                const inicioA = 301; const finalA = 300 + numVendas / 2;
+                const inicioB = 101; const finalB = 100 + numVendas / 2;
+                
+                for (let v = 0; v < numVendas; v++) {
+                    const tipoPagamento = randomChoice(['Dinheiro', 'Dinheiro', 'Dinheiro', 'Cartão', 'Cartão', 'Pix', 'Pix', 'Fiado']);
+                    const valor = randomFloat(16, 35);
+                    const comanda = (v % 2 === 0) ? `A${inicioA + v/2}` : `B${inicioB + (v-1)/2}`;
+                    const transacaoId = `${chaveData}-v${v}`;
+                    
+                    const novaVenda = {
+                        comanda: comanda,
+                        valor: valor,
+                        tipo: tipoPagamento,
+                        data: dataRelatorio.toISOString(),
+                        transacaoId: transacaoId
+                    };
+                    
+                    if (tipoPagamento === 'Fiado') {
+                        const clienteKey = randomChoice(clientesKeys);
+                        const cliente = cadastroClientes[clienteKey];
+                        novaVenda.clienteNome = cliente.nome;
+                        novaVenda.clienteTelefone = cliente.telefone;
+                    }
+                    
+                    vendas.push(novaVenda);
+                    resumo[tipoPagamento] += valor;
+                    resumo.total += valor;
+                }
+                
+                // 2. Gerar Pagamentos de Fiado (Pgs outros dias) (entre 0 e 3)
+                const numPagamentos = randomInt(0, 3);
+                for (let p = 0; p < numPagamentos; p++) {
+                    const clienteKey = randomChoice(clientesKeys);
+                    const cliente = cadastroClientes[clienteKey];
+                    const valor = randomFloat(20, 50);
+                    const tipo = randomChoice(['Dinheiro', 'Pix', 'Cartão']);
+                    
+                    pagamentos.push({
+                        cliente: cliente.nome,
+                        telefone: cliente.telefone,
+                        valor: valor,
+                        tipo: tipo,
+                        data: dataRelatorio.toISOString()
+                    });
+                }
+                
+                historico[chaveData] = {
+                    data: dataRelatorio.toISOString(),
+                    resumo: resumo,
+                    vendas: vendas,
+                    pagamentos: pagamentos,
+                    trocoInicial: trocoInicial,
+                    intervaloComanda: { A_inicio: inicioA, A_final: finalA, B_inicio: inicioB, B_final: finalB }
+                };
+            }
+            return historico;
+        }
+
+        /**
+         * Gera o backup completo e inicia o download
+         */
+        function gerarBackupEBaixar() {
+            try {
+                console.log("Iniciando geração de dados...");
+                
+                const { cadastro, fiado } = gerarCadastroEFiado();
+                console.log(`Cadastro: ${Object.keys(cadastro).length} clientes`);
+                console.log(`Fiado: ${Object.keys(fiado).length} devedores`);
+                
+                const historico = gerarHistorico(cadastro);
+                console.log(`Histórico: ${Object.keys(historico).length} dias`);
+
+                const backupData = {
+                    historico: historico,
+                    fiado: fiado,
+                    cadastro: cadastro
+                };
+                
+                const dataStr = JSON.stringify(backupData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'backup_pensao_demo.json';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert('Arquivo "backup_pensao_demo.json" gerado com sucesso!\n\nAgora, importe este arquivo no seu sistema principal.');
+            
+            } catch (error) {
+                console.error("Erro ao gerar dados:", error);
+                alert("Ocorreu um erro ao gerar os dados. Verifique o console.");
+            }
+        }
+
+        document.getElementById('gerarDemoBtn').addEventListener('click', gerarBackupEBaixar);
+
+    </script>
+</body>
+</html>

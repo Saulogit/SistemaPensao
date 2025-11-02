@@ -497,6 +497,13 @@
                     
                     <div class="mt-6 pt-6 border-t border-dashed space-y-3 no-print">
                         <h3 class="text-lg font-bold text-gray-700">Backup e Restauração</h3>
+                        
+                        <!-- NOVO: Lembrete de Backup -->
+                        <div id="backupReminder" class="hidden p-3 rounded-lg bg-yellow-50 border border-yellow-300">
+                            <!-- Conteúdo do lembrete será inserido pelo JS -->
+                        </div>
+                        <!-- FIM NOVO -->
+                        
                         <p class="text-sm text-gray-500">Salve seus dados (histórico e fiado) em um arquivo seguro no seu computador.</p>
                         <button id="exportarDadosBtn" class="btn btn-success w-full">
                             <i data-lucide="download"></i>
@@ -602,6 +609,7 @@
         const importarBtn = document.getElementById('importarBtn');
         const importarDadosInput = document.getElementById('importarDadosInput');
         const limparHistoricoBtn = document.getElementById('limparHistoricoBtn'); 
+        const backupReminderEl = document.getElementById('backupReminder'); // NOVO: Lembrete Backup
 
         // Relatório Acumulado
         const dataInicioInput = document.getElementById('dataInicio');
@@ -1212,6 +1220,7 @@
             `;
         };
         
+        // ##### ESTA É A FUNÇÃO MODIFICADA #####
         const mostrarHistoricoFiado = (chaveCliente) => {
             const cliente = clientesFiado[chaveCliente]; if (!cliente) return;
             const nomeDisplay = cliente.nome || formatarTelefone(cliente.telefone) || chaveCliente;
@@ -1222,25 +1231,75 @@
                 .sort((a, b) => new Date(a.data) - new Date(b.data))
                 .map(t => {
                     saldoCorrente += t.valor;
-                    let descricao = ''; let valorClasse = '';
-                    if (t.tipo === 'compra') { descricao = `Compra (Comanda #${t.comanda})`; valorClasse = 'text-red-600'; }
+                    let descricao = ''; 
+                    let valorClasse = '';
+                    let valorDisplay = ''; // Variável para o valor formatado
+
+                    if (t.tipo === 'compra') { 
+                        descricao = `Compra (Comanda #${t.comanda})`; 
+                        valorClasse = 'text-red-600'; 
+                        valorDisplay = formatarMoeda(t.valor); // Compra é positiva
+                    }
                     // ATUALIZAÇÃO 2: Mostra a forma de pagamento
                     else if (t.tipo === 'pagamento') { 
                         const formaPag = t.forma || 'Dinheiro'; // Fallback para dados antigos
                         descricao = `Pagamento (${formaPag})`; 
-                        valorClasse = 'text-green-600'; 
+                        valorClasse = 'text-green-600';
+                        // MUDANÇA REQUISITADA: Mostrar com sinal de +
+                        // t.valor é negativo (ex: -20). Math.abs(t.valor) é 20.
+                        valorDisplay = `+${formatarMoeda(Math.abs(t.valor))}`; 
                     }
-                    else if (t.tipo === 'importado') { descricao = 'Saldo Anterior (Importado)'; valorClasse = 'text-gray-600'; }
+                    else if (t.tipo === 'importado') { 
+                        descricao = 'Saldo Anterior (Importado)'; 
+                        valorClasse = 'text-gray-600'; 
+                        valorDisplay = formatarMoeda(t.valor); // Saldo importado é positivo
+                    }
                     return `
                     <li class="flex justify-between items-center p-3 border-b">
                         <div><p class="font-semibold">${descricao}</p><p class="text-sm text-gray-500">${formatarDataHora(t.data)}</p></div>
                         <!-- ATUALIZAÇÃO 1: Muda 'Saldo' para 'Saldo Devedor' -->
-                        <div class="text-right"><p class="font-bold ${valorClasse}">${formatarMoeda(t.valor)}</p><p class="text-sm text-gray-600">Saldo Devedor: ${formatarMoeda(saldoCorrente)}</p></div>
+                        <div class="text-right">
+                            <!-- Valor formatado (com +) é usado aqui -->
+                            <p class="font-bold ${valorClasse}">${valorDisplay}</p> 
+                            <p class="text-sm text-gray-600">Saldo Devedor: ${formatarMoeda(saldoCorrente)}</p>
+                        </div>
                     </li>`;
                 }).join('');
             historicoFiadoModalConteudo.innerHTML = `<ul class="space-y-1">${transacoesHtml}</ul>`;
             historicoFiadoModal.style.display = 'flex';
             lucide.createIcons();
+        };
+        // ##### FIM DA MODIFICAÇÃO #####
+
+        // NOVO: Função para Lembrete de Backup
+        const renderizarLembreteBackup = () => {
+            const ultimoBackup = localStorage.getItem('ultimoBackup');
+            
+            if (!ultimoBackup) {
+                backupReminderEl.innerHTML = `
+                    <div class="flex items-center">
+                        <i data-lucide="shield-alert" class="w-5 h-5 text-yellow-600 mr-2"></i>
+                        <p class="text-sm text-yellow-800"><strong>Atenção:</strong> Faça seu primeiro backup para garantir a segurança dos dados!</p>
+                    </div>`;
+                backupReminderEl.classList.remove('hidden');
+            } else {
+                const dataUltimoBackup = new Date(ultimoBackup);
+                const hoje = new Date();
+                const diffMs = hoje.getTime() - dataUltimoBackup.getTime();
+                const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                if (diffDias >= 7) {
+                    backupReminderEl.innerHTML = `
+                    <div class="flex items-center">
+                        <i data-lucide="shield-alert" class="w-5 h-5 text-yellow-600 mr-2"></i>
+                        <p class="text-sm text-yellow-800">Seu último backup foi há <strong>${diffDias} dias</strong>. Recomendamos exportar um novo!</p>
+                    </div>`;
+                    backupReminderEl.classList.remove('hidden');
+                } else {
+                    backupReminderEl.classList.add('hidden');
+                }
+            }
+            lucide.createIcons(); // Recria o ícone se o innerHTML foi mudado
         };
 
         const atualizarUI = () => {
@@ -1249,6 +1308,7 @@
             renderizarCadastroClientes(); // NOVO
             renderizarVendasDoDia();
             renderizarSeletorHistorico();
+            renderizarLembreteBackup(); // NOVO: Chama a função do lembrete
             // Popula os inputs de configuração ATUALIZADOS
             trocoInicialInput.value = configComandas.trocoInicial > 0 ? configComandas.trocoInicial : '';
             inicioComandaAInput.value = configComandas.inicioA > 0 ? configComandas.inicioA : '';
@@ -1425,7 +1485,7 @@
             if (target.classList.contains('remover-cliente-cadastro-btn')) {
                 const clienteNome = cadastroClientes[clienteChave]?.nome || 'Cliente';
 
-                if (confirm(`Tem certeza que deseja remover "${clienteNome}" do seu cadastro de clientes?\n\n(Atenção: Isso NÃO afeta o histórico de dívidas dele na "Gestão de Fiado".)`)) {
+                if (confirm(`Tem certeza que deseja remover "${clienteNome}" do seu cadastro de clientes?\n\N(Atenção: Isso NÃO afeta o histórico de dívidas dele na "Gestão de Fiado".)`)) {
                     delete cadastroClientes[clienteChave];
                     salvarDados();
                     atualizarUI();
@@ -1664,6 +1724,11 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+            
+            // NOVO: Salva a data do backup
+            localStorage.setItem('ultimoBackup', new Date().toISOString());
+            renderizarLembreteBackup(); // Atualiza o lembrete
+            
             alert('Backup exportado com sucesso!');
         });
         
