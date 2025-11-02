@@ -134,24 +134,46 @@
             cursor: pointer;
             line-height: 1;
         }
+        
+        /* ESTILO DE IMPRESSÃO ATUALIZADO */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #relatorioContainer, #relatorioContainer * {
-                visibility: visible;
-            }
-            #relatorioContainer {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 1rem;
-                border: none;
-                box-shadow: none;
-            }
+            /* Oculta tudo que não é o relatório */
+            body > .max-w-7xl > header,
+            body > .max-w-7xl > main > div:first-child, /* Coluna Esquerda */
+            body > .max-w-7xl > main > div:last-child > div:not(:last-child), /* Cards na Coluna Direita (exceto o último) */
+            body > .modal,
             .no-print {
                 display: none !important;
+            }
+
+            /* Reseta o layout principal */
+            body {
+                background-color: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            main, main > div:last-child {
+                display: block;
+                grid-template-columns: 1fr;
+                gap: 0;
+                padding: 0;
+                margin: 0;
+            }
+            
+            /* Reseta o card de relatório para impressão */
+            .card {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            /* Garante que o container do relatório seja visível (já é por padrão) */
+            #relatorioContainer {
+                visibility: visible;
+                padding: 0;
+                margin: 0;
+                border-top: none; /* Remove a borda que está acima dele no HTML */
             }
         }
     </style>
@@ -217,11 +239,15 @@
                                 </label>
                             </div>
                         </div>
-                        <!-- CAMPO FIADO ATUALIZADO COM AMBOS OBRIGATÓRIOS -->
+                        <!-- CAMPO FIADO ATUALIZADO COM AUTOCOMPLETE -->
                         <div id="campoClienteFiado" class="hidden space-y-3">
-                            <div>
+                            <div class="relative"> <!-- Wrapper para posicionamento -->
                                 <label for="nomeClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Nome do Cliente (Obrigatório)</label>
-                                <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Ex: João da Silva">
+                                <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Ex: João da Silva" autocomplete="off">
+                                <!-- Container de Sugestões -->
+                                <div id="autocompleteSugestoes" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg hidden">
+                                    <!-- Sugestões serão injetadas aqui -->
+                                </div>
                             </div>
                             <div>
                                 <label for="telefoneClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Telefone do Cliente (Obrigatório)</label>
@@ -536,6 +562,7 @@
         const tipoPagamentoRadios = document.querySelectorAll('input[name="tipoPagamento"]');
         const campoClienteFiado = document.getElementById('campoClienteFiado');
         const nomeClienteFiadoInput = document.getElementById('nomeClienteFiado');
+        const autocompleteSugestoesEl = document.getElementById('autocompleteSugestoes'); // NOVO
         const telefoneClienteFiadoInput = document.getElementById('telefoneClienteFiado'); 
         const resetarDiaBtn = document.getElementById('resetarDiaBtn');
         
@@ -970,7 +997,7 @@
             dataFimInput.value = datasSalvas.length > 0 ? datasSalvas[0] : formatarDataInput(new Date().toISOString());
         };
 
-        // FUNÇÃO ATUALIZADA (ORDEM INVERTIDA)
+        // FUNÇÃO ATUALIZADA (ORDEM INVERTIDA E NO-PRINT)
         const mostrarRelatorio = (dataKey) => {
             relatorioAcumuladoContainer.innerHTML = '';
             if (!dataKey || !historicoVendas[dataKey]) {
@@ -1062,18 +1089,18 @@
                         <div class="flex justify-between font-bold text-black border-t pt-1 mt-1"><p>Total Geral (Din + Crt + Pix):</p><p>${formatarMoeda(acumuladoTotalGeral)}</p></div>
                     </div>
 
-                    <!-- Previsão de Caixa -->
-                    <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded">
+                    <!-- Previsão de Caixa (AGORA COM NO-PRINT) -->
+                    <div class="space-y-2 border-t pt-2 bg-blue-50 p-2 rounded no-print">
                         <div class="flex justify-between font-bold text-blue-700"><p>Total em Dinheiro (Final):</p><p>${formatarMoeda(totalDinheiroRelatorio)}</p></div>
                         <p class="text-xs text-blue-600">(Valor Inicial + Vendas em Dinheiro + Pgs outros dias em Dinheiro)</p>
                     </div>
 
-                    <!-- Detalhes das Vendas/Pagamentos (sem mudança) -->
-                    <div class="border-t pt-2">
+                    <!-- Detalhes das Vendas/Pagamentos (AGORA COM NO-PRINT) -->
+                    <div class="border-t pt-2 no-print">
                         <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2">${vendasHtml}</ul>
                     </div>
-                    <div class="border-t pt-2">
+                    <div class="border-t pt-2 no-print">
                         <h4 class="font-semibold mb-2">Detalhes Pgs outros dias (${pagamentos ? pagamentos.length : 0} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2">${pagamentosHtml}</ul>
                     </div>
@@ -1316,26 +1343,50 @@
             telefoneClienteFiadoInput.required = isFiado;
         }));
         
-        // Evento de input no NOME do fiado para autopreencher o telefone
+        // ATUALIZADO: Evento de input no NOME do fiado para AUTOCOMPLETAR
         nomeClienteFiadoInput.addEventListener('input', (e) => {
-            const nomeDigitado = e.target.value.trim();
-            
+            const nomeDigitado = e.target.value.trim().toLowerCase();
+            autocompleteSugestoesEl.innerHTML = ''; // Limpa sugestões antigas
+
             if (nomeDigitado.length < 2) { // Não busca com menos de 2 caracteres
-                 telefoneClienteFiadoInput.value = ''; // Limpa se o nome for apagado
-                 return;
+                autocompleteSugestoesEl.classList.add('hidden');
+                telefoneClienteFiadoInput.value = ''; // Limpa o telefone se o nome for apagado
+                return;
             }
 
-            // Busca clientes que batem com o nome digitado
+            // Busca clientes que *incluem* o nome digitado
             const clientesEncontrados = Object.values(cadastroClientes).filter(
-                cliente => cliente.nome.toLowerCase() === nomeDigitado.toLowerCase()
+                cliente => cliente.nome.toLowerCase().includes(nomeDigitado)
             );
 
-            // Se encontrar exatamente UM cliente, autopreenche o telefone
-            if (clientesEncontrados.length === 1) {
-                telefoneClienteFiadoInput.value = formatarTelefone(clientesEncontrados[0].telefone);
+            if (clientesEncontrados.length > 0) {
+                clientesEncontrados.slice(0, 10).forEach(cliente => { // Limita a 10 sugestões
+                    const sugestaoDiv = document.createElement('div');
+                    sugestaoDiv.className = 'p-3 hover:bg-gray-100 cursor-pointer';
+                    sugestaoDiv.innerHTML = `
+                        <p class="font-semibold">${cliente.nome}</p>
+                        <p class="text-sm text-gray-500">${formatarTelefone(cliente.telefone)}</p>
+                    `;
+                    // Adiciona o evento de clique para selecionar
+                    sugestaoDiv.addEventListener('click', () => {
+                        nomeClienteFiadoInput.value = cliente.nome;
+                        telefoneClienteFiadoInput.value = formatarTelefone(cliente.telefone);
+                        autocompleteSugestoesEl.classList.add('hidden');
+                        autocompleteSugestoesEl.innerHTML = '';
+                    });
+                    autocompleteSugestoesEl.appendChild(sugestaoDiv);
+                });
+                autocompleteSugestoesEl.classList.remove('hidden');
             } else {
-                // Se encontrar vários ou nenhum, limpa o campo de telefone
-                telefoneClienteFiadoInput.value = '';
+                autocompleteSugestoesEl.classList.add('hidden');
+            }
+            
+            // Lógica de autopreenchimento se for uma correspondência exata
+            const correspondenciaExata = clientesEncontrados.filter(c => c.nome.toLowerCase() === nomeDigitado);
+            if (correspondenciaExata.length === 1) {
+                telefoneClienteFiadoInput.value = formatarTelefone(correspondenciaExata[0].telefone);
+            } else {
+                telefoneClienteFiadoInput.value = ''; // Limpa se a correspondência não for mais exata
             }
         });
         
@@ -1675,6 +1726,10 @@
                 }
                 if (event.target == historicoFiadoModal) {
                     historicoFiadoModal.style.display = 'none';
+                }
+                // ATUALIZADO: Esconde o autocomplete se clicar fora
+                if (!campoClienteFiado.contains(event.target)) { 
+                    autocompleteSugestoesEl.classList.add('hidden');
                 }
             });
         });
