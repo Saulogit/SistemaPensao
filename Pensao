@@ -134,9 +134,6 @@
 
         /* --- CSS DE IMPRESSÃO DEFINITIVO --- */
         @media print {
-            /* * 1. Reseta o 'html' e 'body' para não terem altura própria. 
-             * Esta é a correção principal para as páginas em branco.
-             */
             html, body {
                 height: auto !important;
                 min-height: 0 !important;
@@ -144,19 +141,16 @@
                 padding: 0 !important;
                 border: 0 !important;
                 background: #ffffff !important;
-                overflow: hidden; /* Garante que nada transborde */
+                overflow: hidden;
             }
 
-            /* 2. Esconde TUDO no body. */
             body * {
                 visibility: hidden;
             }
 
-            /* 3. Pega o card do relatório pelo ID que você adicionou ('#card-relatorio') */
-            /* e o torna o ÚNICO item visível na página. */
             #card-relatorio {
                 visibility: visible;
-                position: absolute; /* Remove do fluxo normal da página */
+                position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
@@ -166,14 +160,10 @@
                 box-shadow: none;
             }
             
-            /* 4. Garante que TUDO DENTRO do card de relatório seja visível */
             #card-relatorio * {
                 visibility: visible;
             }
 
-            /* 5. A classe .no-print (que você já usa) usa 'display: none'. */
-            /* Isso é crucial, pois remove os blocos indesejados (Detalhes, Previsão) */
-            /* e faz o #card-relatorio encolher para caber em uma página só. */
             .no-print {
                 display: none !important;
             }
@@ -240,7 +230,7 @@
                                     <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50 has-[:checked]:bg-red-100 has-[:checked]:border-red-400">
                                         <input type="radio" name="tipoPagamento" value="Fiado" class="hidden">
                                         <i data-lucide="book-user" class="w-5 h-5 mr-2 text-red-600"></i>
-                                        <span class="font-medium">Fiado</span>
+                                        <span class="font-medium text-sm leading-tight">Pagamentos a Receber</span>
                                     </label>
                                 </div>
                             </div>
@@ -271,7 +261,7 @@
                                     <input type="number" id="valorPix" step="0.01" class="input-field" placeholder="0,00">
                                 </div>
                                 <div>
-                                    <label for="valorFiado" class="block text-sm font-medium text-red-600 mb-1">Fiado (R$)</label>
+                                    <label for="valorFiado" class="block text-sm font-medium text-red-600 mb-1">A Receber (R$)</label>
                                     <input type="number" id="valorFiado" step="0.01" class="input-field !border-red-300 focus:!border-red-500 focus:!ring-red-200" placeholder="0,00">
                                 </div>
                             </div>
@@ -291,7 +281,7 @@
                         </div>
 
                         <div id="campoClienteFiado" class="hidden space-y-3 pt-4 border-t border-dashed">
-                            <h3 class="text-md font-semibold text-gray-700">Dados do Cliente (para Fiado)</h3>
+                            <h3 class="text-md font-semibold text-gray-700">Dados do Cliente (para Pagamentos a Receber)</h3>
                             <div>
                                 <label for="nomeClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Nome do Cliente (Obrigatório)</label>
                                 <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Digite o nome..." list="listaNomesClientes">
@@ -334,7 +324,7 @@
                                     <span id="totalPix">R$ 0,00</span>
                                 </div>
                                 <div class="flex justify-between items-center text-red-600 font-medium">
-                                    <span><i data-lucide="book-user" class="w-4 h-4 inline-block mr-2"></i>Fiado do Dia:</span>
+                                    <span><i data-lucide="book-user" class="w-4 h-4 inline-block mr-2"></i>A Receber do Dia:</span>
                                     <span id="totalFiadoHoje">R$ 0,00</span>
                                 </div>
                                 <div class="flex justify-between items-center font-bold text-blue-600 border-t pt-1 mt-1">
@@ -345,7 +335,7 @@
                         </div>
 
                         <div class="border-t pt-3">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Pgs. outros dias (Fiado)</h3>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h3>
                             <div class="space-y-2 pl-4 text-base">
                                 <div class="flex justify-between items-center text-gray-600">
                                     <span class="flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i>(Pgs) Dinheiro:</span>
@@ -360,7 +350,7 @@
                                     <span id="totalPagamentosFiadoPix">R$ 0,00</span>
                                 </div>
                                 <div class="flex justify-between items-center text-green-600 font-medium border-t pt-1 mt-1">
-                                    <span><i data-lucide="piggy-bank" class="w-4 h-4 inline-block mr-2"></i>Total de Pgs:</span>
+                                    <span><i data-lucide="piggy-bank" class="w-4 h-4 inline-block mr-2"></i>Total Recebido:</span>
                                     <span id="totalPagamentosFiadoHoje">R$ 0,00</span>
                                 </div>
                             </div>
@@ -393,7 +383,7 @@
                     <div class="mt-4 pt-4 border-t border-dashed">
                         <h3 class="text-lg font-semibold text-gray-700 mb-2">Previsão do Caixa (Dinheiro)</h3>
                         <div class="bg-blue-50 p-4 rounded-lg text-center">
-                            <p class="text-sm text-blue-700">Troco Inicial + Vendas (Dinheiro) + Pgs outros dias (Dinheiro)</p>
+                            <p class="text-sm text-blue-700">Troco Inicial + Vendas (Dinheiro) + Recebimentos (Dinheiro)</p>
                             <p id="totalCaixaDinheiro" class="text-3xl font-bold text-blue-900 mt-2">R$ 0,00</p>
                             <p class="text-xs text-gray-500 mt-2">Confira este valor com o dinheiro físico na sua gaveta.</p>
                         </div>
@@ -421,20 +411,20 @@
                         <div>
                            <label for="inicioComandaA" class="block text-sm font-medium text-gray-600 mb-1">Início Amarelas (A)</label>
                            <input type="number" id="inicioComandaA" class="input-field" placeholder="Ex: 301">
-                       </div>
+                        </div>
                         <div>
-                           <label for="finalComandaA" class="block text-sm font-medium text-gray-600 mb-1">Final Amarelas (A)</label>
-                           <input type="number" id="finalComandaA" class="input-field" placeholder="Ex: 350">
-                       </div>
+                            <label for="finalComandaA" class="block text-sm font-medium text-gray-600 mb-1">Final Amarelas (A)</label>
+                            <input type="number" id="finalComandaA" class="input-field" placeholder="Ex: 350">
+                        </div>
                         <div>
-                           <label for="inicioComandaB" class="block text-sm font-medium text-gray-600 mb-1">Início Brancas (B)</label>
-                           <input type="number" id="inicioComandaB" class="input-field" placeholder="Ex: 101">
-                       </div>
+                            <label for="inicioComandaB" class="block text-sm font-medium text-gray-600 mb-1">Início Brancas (B)</label>
+                            <input type="number" id="inicioComandaB" class="input-field" placeholder="Ex: 101">
+                        </div>
                         <div>
-                           <label for="finalComandaB" class="block text-sm font-medium text-gray-600 mb-1">Final Brancas (B)</label>
-                           <input type="number" id="finalComandaB" class="input-field" placeholder="Ex: 180">
-                       </div>
-                   </div>
+                            <label for="finalComandaB" class="block text-sm font-medium text-gray-600 mb-1">Final Brancas (B)</label>
+                            <input type="number" id="finalComandaB" class="input-field" placeholder="Ex: 180">
+                        </div>
+                    </div>
                     <button id="salvarConfigComandasBtn" class="btn btn-primary w-full mt-3"><i data-lucide="save"></i> Salvar Intervalos e Troco</button>
                     <div class="mt-4 pt-4 border-t border-dashed">
                         <button id="resetarDiaBtn" class="btn btn-danger w-full mt-3">
@@ -447,6 +437,14 @@
             </div>
 
             <div class="flex flex-col gap-8">
+                
+                <div class="card h-fit !py-4">
+                     <label for="buscadoGlobal" class="block text-sm font-medium text-gray-700 mb-2">Buscar Clientes (Cadastro ou A Receber)</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                        <input type="text" id="buscadoGlobal" class="input-field pl-10" placeholder="Digite nome ou telefone...">
+                    </div>
+                </div>
                 <div class="card h-fit">
                     <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                         <i data-lucide="clipboard-list"></i>
@@ -485,10 +483,10 @@
                 <div class="card h-fit">
                     <h2 class="text-2xl font-bold text-gray-700 mb-2 flex items-center gap-2">
                         <i data-lucide="users"></i>
-                        Gestão de Fiado
+                        Gestão de Pagamentos a Receber
                     </h2>
                     <div class="flex justify-between items-center bg-red-100 p-3 rounded-lg mb-4">
-                        <span class="font-bold text-red-700">VALOR TOTAL EM ABERTO:</span>
+                        <span class="font-bold text-red-700">TOTAL A RECEBER:</span>
                         <span id="totalFiadoGeral" class="text-xl font-bold text-red-700">R$ 0,00</span>
                     </div>
                     <div id="listaClientesFiado" class="space-y-4 overflow-y-auto pr-2" style="max-height: 50vh;">
@@ -533,7 +531,7 @@
                     
                     <div class="mt-6 pt-6 border-t border-dashed space-y-3 no-print">
                         <h3 class="text-lg font-bold text-gray-700">Backup e Restauração</h3>
-                        <p class="text-sm text-gray-500">Salve seus dados (histórico e fiado) em um arquivo seguro no seu computador.</p>
+                        <p class="text-sm text-gray-500">Salve seus dados (histórico e contas a receber) em um arquivo seguro no seu computador.</p>
                         <button id="exportarDadosBtn" class="btn btn-success w-full">
                             <i data-lucide="download"></i>
                             Exportar Backup Completo
@@ -620,8 +618,10 @@
         const nomeClienteFiadoInput = document.getElementById('nomeClienteFiado');
         const telefoneClienteFiadoInput = document.getElementById('telefoneClienteFiado'); 
         
-        // NOVO ELEMENTO (Adicione esta linha)
+        // NOVO ELEMENTO
         const datalistNomesClientes = document.getElementById('listaNomesClientes');
+        // NOVO ELEMENTO BUSCA GLOBAL
+        const buscadorGlobal = document.getElementById('buscadoGlobal');
         
         const resetarDiaBtn = document.getElementById('resetarDiaBtn');
         
@@ -696,6 +696,11 @@
         let acaoPendenteComSenha = null; 
 
         const limparTelefone = (tel) => (tel || '').replace(/\D/g, '');
+        
+        // Normaliza string para busca (remove acentos e lowercase)
+        const normalizarTexto = (texto) => {
+            return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        };
 
         // Função de migração (para dados antigos)
         const migrarEstruturaVendas = (vendas) => {
@@ -786,7 +791,7 @@
 
         // --- Carregamento e Migração de Dados ---
         let vendasHojeBruto = JSON.parse(localStorage.getItem('vendasHoje')) || [];
-        let vendasHoje = migrarEstruturaVendas(vendasHojeBruto); // **MIGRAÇÃO**
+        let vendasHoje = migrarEstruturaVendas(vendasHojeBruto); 
         
         let clientesFiadoBruto = JSON.parse(localStorage.getItem('clientesFiado')) || {};
         let clientesFiado = migrarEstruturaFiado(clientesFiadoBruto); 
@@ -802,7 +807,7 @@
         let comandasHoje = JSON.parse(localStorage.getItem('comandasHoje')) || []; 
         
         let historicoVendasBruto = JSON.parse(localStorage.getItem('historicoVendas')) || {};
-        let historicoVendas = migrarEstruturaHistorico(historicoVendasBruto); // **MIGRAÇÃO**
+        let historicoVendas = migrarEstruturaHistorico(historicoVendasBruto);
 
         let pagamentosHoje = JSON.parse(localStorage.getItem('pagamentosHoje')) || []; 
         
@@ -840,7 +845,6 @@
             localStorage.setItem('cadastroClientes', JSON.stringify(cadastroClientes));
         };
         
-        // ATUALIZADO para nova estrutura
         const arquivarVendasDoDia = () => {
             if (vendasHoje.length === 0 && pagamentosHoje.length === 0) return;
             const hoje = new Date();
@@ -888,13 +892,10 @@
             setTimeout(() => {
                 alert('Dia encerrado e arquivado com sucesso! Novo dia iniciado.');
                 
-                // Pergunta ao usuário sobre o backup
-                if (confirm("Dia finalizado! \n\nQue tal fazer um backup de segurança de todos os seus dados (histórico e fiado) agora? \n\nÉ rápido e garante que você não perca nada.")) {
-                    // Se "OK", aciona o clique no botão de exportar
+                if (confirm("Dia finalizado! \n\nQue tal fazer um backup de segurança de todos os seus dados agora? \n\nÉ rápido e garante que você não perca nada.")) {
                     exportarDadosBtn.click();
                 }
-            }, 100); // 100ms é o suficiente
-            // ----- FIM DA IMPLEMENTAÇÃO DO BACKUP -----
+            }, 100); 
         }
 
         const limparHistoricoAntigo = () => {
@@ -902,7 +903,7 @@
             historicoVendas = {};
             salvarDados();
             atualizarUI();
-            alert('Histórico de vendas antigo foi permanentemente apagado! (A lista de fiado foi mantida).');
+            alert('Histórico de vendas antigo foi permanentemente apagado! (A lista de contas a receber foi mantida).');
         }
 
         const ordenarComandas = (a, b) => {
@@ -919,7 +920,12 @@
 
         // --- LÓGICA DE RENDERIZAÇÃO ---
         
-        // ATUALIZADO para nova estrutura
+        // Helper para exibir nome amigável
+        const getNomeTipoPagamento = (tipo) => {
+            if (tipo === 'Fiado') return 'Pagamentos a Receber';
+            return tipo;
+        };
+
         const renderizarResumoDiario = () => {
             const totais = vendasHoje.reduce((acc, venda) => {
                 venda.pagamentos.forEach(pag => {
@@ -966,22 +972,43 @@
             totalCaixaDinheiroEl.textContent = formatarMoeda(totalDinheiroCaixa);
         };
 
-        const renderizarClientesFiado = () => {
+        const renderizarClientesFiado = (termoBusca = '') => {
             listaClientesFiadoEl.innerHTML = '';
             const chavesClientes = Object.keys(clientesFiado); 
             let totalGeral = 0; let clientesAtivos = 0; 
-            if (chavesClientes.length === 0) {
-                listaClientesFiadoEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>';
-                totalFiadoGeralEl.textContent = formatarMoeda(0); return;
+            
+            // Filtro de busca
+            const termo = normalizarTexto(termoBusca);
+            
+            const clientesFiltrados = chavesClientes.filter(chave => {
+                 const dividaObj = clientesFiado[chave];
+                 const nome = normalizarTexto(dividaObj.nome);
+                 const tel = normalizarTexto(dividaObj.telefone || chave);
+                 return termo === '' || nome.includes(termo) || tel.includes(termo);
+            });
+
+            if (clientesFiltrados.length === 0) {
+                 if (termo !== '') {
+                      listaClientesFiadoEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente encontrado.</p>';
+                 } else {
+                     listaClientesFiadoEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>';
+                 }
+                 // Calcula o total geral independente da busca para manter o topo correto
+                 const totalReal = chavesClientes.reduce((acc, chave) => acc + calcularDividaCliente(chave), 0);
+                 totalFiadoGeralEl.textContent = formatarMoeda(totalReal); 
+                 return;
             }
-            chavesClientes.sort((a, b) => {
+
+            clientesFiltrados.sort((a, b) => {
                 const nomeA = clientesFiado[a].nome || a; const nomeB = clientesFiado[b].nome || b;
                 return nomeA.localeCompare(nomeB);
             }).forEach(chave => {
                 const dividaObj = clientesFiado[chave];
                 const dividaValor = calcularDividaCliente(chave);
-                totalGeral += dividaValor;
+                
+                // Total sempre acumula, mas aqui mostramos só os filtrados na lista
                 if (dividaValor < 0.01) { return; }
+                
                 clientesAtivos++;
                 const clienteDiv = document.createElement('div');
                 clienteDiv.className = 'border rounded-lg p-4 space-y-3';
@@ -1006,24 +1033,39 @@
                                 <option value="Cartão">Cartão</option>
                                 <option value="Pix">Pix</option>
                             </select>
-                            <button class="btn btn-primary text-sm flex-shrink-0 sm:w-1/3 pagar-fiado-btn" data-cliente-chave="${chave}"><i data-lucide="check" class="w-4 h-4"></i>Pagar/Amortizar</button>
+                            <button class="btn btn-primary text-sm flex-shrink-0 sm:w-1/3 pagar-fiado-btn" data-cliente-chave="${chave}"><i data-lucide="check" class="w-4 h-4"></i>Receber</button>
                         </div>`;
                 listaClientesFiadoEl.appendChild(clienteDiv);
             });
-            if (clientesAtivos === 0) { listaClientesFiadoEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente com débito no momento.</p>'; }
+            
+            // Recalcula total geral (sem filtro) para o header
+            totalGeral = chavesClientes.reduce((acc, chave) => acc + calcularDividaCliente(chave), 0);
             totalFiadoGeralEl.textContent = formatarMoeda(totalGeral);
         };
 
-        const renderizarCadastroClientes = () => {
+        const renderizarCadastroClientes = (termoBusca = '') => {
             listaClientesCadastradosEl.innerHTML = '';
             const chavesClientes = Object.keys(cadastroClientes);
 
-            if (chavesClientes.length === 0) {
-                listaClientesCadastradosEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente cadastrado.</p>';
+            const termo = normalizarTexto(termoBusca);
+
+            const clientesFiltrados = chavesClientes.filter(chave => {
+                 const cliente = cadastroClientes[chave];
+                 const nome = normalizarTexto(cliente.nome);
+                 const tel = normalizarTexto(cliente.telefone);
+                 return termo === '' || nome.includes(termo) || tel.includes(termo);
+            });
+
+            if (clientesFiltrados.length === 0) {
+                 if (termo !== '') {
+                      listaClientesCadastradosEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente encontrado.</p>';
+                 } else {
+                     listaClientesCadastradosEl.innerHTML = '<p class="text-center text-gray-500 py-4">Nenhum cliente cadastrado.</p>';
+                 }
                 return;
             }
 
-            chavesClientes.sort((a, b) => {
+            clientesFiltrados.sort((a, b) => {
                 const nomeA = cadastroClientes[a].nome || a;
                 const nomeB = cadastroClientes[b].nome || b;
                 return nomeA.localeCompare(nomeB);
@@ -1048,27 +1090,21 @@
                 `;
                 listaClientesCadastradosEl.appendChild(clienteDiv);
             });
-        };// NOVO: Renderiza o <datalist> para o autocomplete
+        };
+        
         const renderizarDatalistClientes = () => {
-            datalistNomesClientes.innerHTML = ''; // Limpa as opções antigas
-            
-            // Pega todos os clientes do cadastro
+            datalistNomesClientes.innerHTML = '';
             const clientes = Object.values(cadastroClientes);
-            
-            // Ordena por nome
             clientes.sort((a, b) => a.nome.localeCompare(b.nome));
 
-            // Cria uma tag <option> para cada cliente
             clientes.forEach(cliente => {
                 const option = document.createElement('option');
                 option.value = cliente.nome; 
-                // O navegador pode (opcionalmente) mostrar isso como texto secundário
                 option.label = `Tel: ${formatarTelefone(cliente.telefone)}`; 
                 datalistNomesClientes.appendChild(option);
             });
         };
 
-        // ATUALIZADO para nova estrutura
         const renderizarVendasDoDia = () => {
             listaVendasHojeEl.innerHTML = '';
             comandasRegistradasEl.textContent = comandasHoje.length > 0 ? [...comandasHoje].sort(ordenarComandas).join(', ') : 'Nenhuma comanda registrada.';
@@ -1083,13 +1119,16 @@
                 
                 const pagamentosHtml = venda.pagamentos.map(p => {
                     let tipoPagamentoIcon = '';
+                    // Exibição amigável
+                    const nomeTipo = getNomeTipoPagamento(p.tipo);
+                    
                     switch(p.tipo) {
                         case 'Dinheiro': tipoPagamentoIcon = '<i data-lucide="dollar-sign" class="w-4 h-4 text-green-600"></i>'; break;
                         case 'Cartão': tipoPagamentoIcon = '<i data-lucide="credit-card" class="w-4 h-4 text-blue-600"></i>'; break;
                         case 'Pix': tipoPagamentoIcon = '<i data-lucide="smartphone" class="w-4 h-4 text-purple-600"></i>'; break;
                         case 'Fiado': tipoPagamentoIcon = '<i data-lucide="book-user" class="w-4 h-4 text-red-600"></i>'; break;
                     }
-                    return `<span class="flex items-center gap-1 text-sm text-gray-500" title="${p.tipo}: ${formatarMoeda(p.valor)}">${tipoPagamentoIcon} ${formatarMoeda(p.valor)}</span>`;
+                    return `<span class="flex items-center gap-1 text-sm text-gray-500" title="${nomeTipo}: ${formatarMoeda(p.valor)}">${tipoPagamentoIcon} ${formatarMoeda(p.valor)}</span>`;
                 }).join('');
 
                 vendaDiv.innerHTML = `
@@ -1130,7 +1169,6 @@
             dataFimInput.value = datasSalvas.length > 0 ? datasSalvas[0] : formatarDataInput(new Date().toISOString());
         };
 
-        // ATUALIZADO para nova estrutura
         const mostrarRelatorio = (dataKey) => {
             relatorioAcumuladoContainer.innerHTML = '';
             if (!dataKey || !historicoVendas[dataKey]) {
@@ -1144,14 +1182,16 @@
                 const pagamentosHtml = venda.pagamentos.map(p => {
                     let clienteDisplay = '';
                     let fullTitle = '';
+                    const nomeTipo = getNomeTipoPagamento(p.tipo);
+
                     if (p.tipo === 'Fiado') {
                         const telFormatado = formatarTelefone(p.clienteTelefone);
                         clienteDisplay = `(${p.clienteNome} / ${telFormatado})`;
-                        fullTitle = `title="${p.tipo} ${clienteDisplay}"`;
+                        fullTitle = `title="${nomeTipo} ${clienteDisplay}"`;
                     }
                     return `
                       <div class="flex justify-between text-sm text-gray-600">
-                        <span>- ${p.tipo}:</span>
+                        <span>- ${nomeTipo}:</span>
                         <span class="truncate min-w-0" ${fullTitle}>${formatarMoeda(p.valor)} ${clienteDisplay}</span>
                       </div>
                     `;
@@ -1216,18 +1256,18 @@
                             <div class="flex justify-between items-center"><p>Dinheiro:</p><p>${formatarMoeda(resumo.Dinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>Cartão:</p><p>${formatarMoeda(resumo.Cartão)}</p></div>
                             <div class="flex justify-between items-center"><p>Pix:</p><p>${formatarMoeda(resumo.Pix)}</p></div>
-                            <div class="flex justify-between items-center text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
+                            <div class="flex justify-between items-center text-red-600"><p>A Receber (Novas Vendas):</p><p>${formatarMoeda(resumo.Fiado)}</p></div>
                             <div class="flex justify-between items-center font-bold text-blue-600 border-t pt-1 mt-1 text-base"><p>Venda Total (Bruta):</p><p>${formatarMoeda(resumo.total)}</p></div>
                         </div>
                     </div>
 
                     <div class="border-t pt-3">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs. outros dias (Fiado)</h4>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h4>
                         <div class="space-y-2 pl-4 text-sm">
                             <div class="flex justify-between items-center"><p>(Pgs) Dinheiro:</p><p>${formatarMoeda(resumoPagamentos.Dinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Cartão:</p><p>${formatarMoeda(resumoPagamentos.Cartão)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Pix:</p><p>${formatarMoeda(resumoPagamentos.Pix)}</p></div>
-                            <div class="flex justify-between items-center font-bold text-green-600 border-t pt-1 mt-1 text-base"><p>Total de Pgs:</p><p>${formatarMoeda(resumoPagamentos.total)}</p></div>
+                            <div class="flex justify-between items-center font-bold text-green-600 border-t pt-1 mt-1 text-base"><p>Total Recebido:</p><p>${formatarMoeda(resumoPagamentos.total)}</p></div>
                         </div>
                     </div>
 
@@ -1239,13 +1279,6 @@
                             <div class="flex justify-between items-center"><p>Pix (Total):</p><p>${formatarMoeda(acumuladoPix)}</p></div>
                             <div class="flex justify-between items-center font-bold text-gray-900 border-t pt-1 mt-1 text-base"><p>Total Recebido (Dia):</p><p>${formatarMoeda(acumuladoTotal)}</p></div>
                         </div>
-                    </div>
-
-                    <div class="border-t pt-3 space-y-2 bg-blue-50 p-3 rounded-lg no-print">
-                        <h4 class="text-lg font-semibold text-blue-800 mb-2">Previsão do Caixa (Dinheiro)</h4>
-                        <div class="flex justify-between text-sm text-blue-700"><p>Valor Inicial (Troco):</p><p>${formatarMoeda(trocoInicial || 0)}</p></div>
-                        <div class="flex justify-between font-bold text-blue-900 text-base"><p>Total em Caixa (Dinheiro):</p><p>${formatarMoeda(totalDinheiroRelatorio)}</p></div>
-                        <p class="text-xs text-blue-600">(Troco + Vendas Dinheiro + Pgs Dinheiro)</p>
                     </div>
 
                     <div class="border-t pt-3 no-print">
@@ -1328,18 +1361,18 @@
                             <div class="flex justify-between items-center"><p>Dinheiro (Vendas):</p><p>${formatarMoeda(totaisAcumulados.dinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>Cartão:</p><p>${formatarMoeda(totaisAcumulados.cartao)}</p></div>
                             <div class="flex justify-between items-center"><p>Pix:</p><p>${formatarMoeda(totaisAcumulados.pix)}</p></div>
-                            <div class="flex justify-between items-center text-red-600"><p>Fiado (Novas Vendas):</p><p>${formatarMoeda(totaisAcumulados.fiado)}</p></div>
+                            <div class="flex justify-between items-center text-red-600"><p>A Receber (Novas Vendas):</p><p>${formatarMoeda(totaisAcumulados.fiado)}</p></div>
                             <div class="flex justify-between items-center font-bold text-blue-600 border-t pt-1 mt-1 text-base"><p>Venda Total (Bruta):</p><p>${formatarMoeda(totaisAcumulados.vendaBruta)}</p></div>
                         </div>
                     </div>
 
                     <div class="border-t pt-3">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs. outros dias (Fiado)</h4>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h4>
                         <div class="space-y-2 pl-4 text-sm">
                             <div class="flex justify-between items-center"><p>(Pgs) Dinheiro:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoDinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Cartão:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoCartao)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Pix:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoPix)}</p></div>
-                            <div class="flex justify-between items-center font-bold text-green-600 border-t pt-1 mt-1 text-base"><p>Total de Pgs:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiado)}</p></div>
+                            <div class="flex justify-between items-center font-bold text-green-600 border-t pt-1 mt-1 text-base"><p>Total Recebido:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiado)}</p></div>
                         </div>
                     </div>
 
@@ -1351,13 +1384,6 @@
                             <div class="flex justify-between items-center"><p>Pix (Total):</p><p>${formatarMoeda(acumuladoPix)}</p></div>
                             <div class="flex justify-between items-center font-bold text-gray-900 border-t pt-1 mt-1 text-base"><p>Total Recebido (Período):</p><p>${formatarMoeda(acumuladoTotal)}</p></div>
                         </div>
-                    </div>
-
-                    <div class="border-t pt-3 space-y-2 bg-blue-50 p-3 rounded-lg">
-                        <h4 class="text-lg font-semibold text-blue-800 mb-2">Previsão do Caixa (Dinheiro)</h4>
-                        <div class="flex justify-between text-sm text-blue-700"><p>Total Valor Inicial (Troco):</p><p>${formatarMoeda(totaisAcumulados.trocoInicialTotal)}</p></div>
-                        <div class="flex justify-between font-bold text-blue-900 text-base"><p>Total em Dinheiro Gerado:</p><p>${formatarMoeda(totalDinheiroGerado)}</p></div>
-                        <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pgs Dinheiro)</p>
                     </div>
                 </div>
             `;
@@ -1409,6 +1435,13 @@
 
         // --- LÓGICA DE EVENTOS ---
         
+        // NOVO: Evento da Barra de Busca Global
+        buscadorGlobal.addEventListener('input', (e) => {
+            const termo = e.target.value;
+            renderizarClientesFiado(termo);
+            renderizarCadastroClientes(termo);
+        });
+
         // NOVO: Função para alternar os modos do formulário
         const toggleFormMode = (toDistribuido) => {
             isModoDistribuido = toDistribuido;
@@ -1476,9 +1509,9 @@
                 // --- LÓGICA DO MODO DISTRIBUÍDO ---
                 valorTotalVenda = parseFloat(valorVendaTotalInput.value) || 0;
                 if (valorTotalVenda <= 0) {
-                     alert('Por favor, insira um Valor Total válido.');
-                     valorVendaTotalInput.focus();
-                     return;
+                      alert('Por favor, insira um Valor Total válido.');
+                      valorVendaTotalInput.focus();
+                      return;
                 }
                 
                 const valorDinheiro = parseFloat(valorDinheiroInput.value) || 0;
@@ -1498,7 +1531,7 @@
                     nomeCliente = nomeClienteFiadoInput.value.trim();
                     telefoneCliente = limparTelefone(telefoneClienteFiadoInput.value.trim());
                     if (!telefoneCliente || !nomeCliente) {
-                         alert('Nome e Telefone são obrigatórios para pagamento em Fiado.');
+                         alert('Nome e Telefone são obrigatórios para pagamentos a receber.');
                          return;
                     }
                 }
@@ -1515,9 +1548,9 @@
                 // --- LÓGICA DO MODO SIMPLES ---
                 valorTotalVenda = parseFloat(valorVendaInput.value) || 0;
                  if (valorTotalVenda <= 0) {
-                     alert('Por favor, insira um Valor válido.');
-                     valorVendaInput.focus();
-                     return;
+                      alert('Por favor, insira um Valor válido.');
+                      valorVendaInput.focus();
+                      return;
                 }
                 
                 const tipoPagamento = document.querySelector('input[name="tipoPagamento"]:checked').value;
@@ -1526,7 +1559,7 @@
                     nomeCliente = nomeClienteFiadoInput.value.trim();
                     telefoneCliente = limparTelefone(telefoneClienteFiadoInput.value.trim());
                     if (!telefoneCliente || !nomeCliente) {
-                         alert('Nome e Telefone são obrigatórios para pagamento em Fiado.');
+                         alert('Nome e Telefone são obrigatórios para pagamentos a receber.');
                          return;
                     }
                     pagamentos.push({ tipo: 'Fiado', valor: valorTotalVenda, clienteNome: nomeCliente, clienteTelefone: telefoneCliente, transacaoId: transacaoId });
@@ -1556,7 +1589,7 @@
                 });
                 
                 if (!cadastroClientes[chaveCliente] || cadastroClientes[chaveCliente].nome !== pagFiado.clienteNome) {
-                     cadastroClientes[chaveCliente] = { nome: pagFiado.clienteNome, telefone: chaveCliente };
+                      cadastroClientes[chaveCliente] = { nome: pagFiado.clienteNome, telefone: chaveCliente };
                 }
             }
 
@@ -1642,17 +1675,17 @@
         nomeClienteFiadoInput.addEventListener('input', (e) => {
             const nomeDigitado = e.target.value.trim();
             const clienteEncontrado = Object.values(cadastroClientes).find(
-        cliente => cliente.nome.toLowerCase() === nomeDigitado.toLowerCase()
-    );
+                cliente => cliente.nome.toLowerCase() === nomeDigitado.toLowerCase()
+            );
 
-    if (clienteEncontrado) {
-        // 2. Se encontrou, preenche o telefone
-        telefoneClienteFiadoInput.value = formatarTelefone(clienteEncontrado.telefone);
-    } else {
-        // 3. Se o nome for parcial ou não existir, limpa o telefone
-        telefoneClienteFiadoInput.value = '';
-    }
-});
+            if (clienteEncontrado) {
+                // 2. Se encontrou, preenche o telefone
+                telefoneClienteFiadoInput.value = formatarTelefone(clienteEncontrado.telefone);
+            } else {
+                // 3. Se o nome for parcial ou não existir, limpa o telefone
+                telefoneClienteFiadoInput.value = '';
+            }
+        });
         
         // Evento para o formulário de cadastro de clientes (Sem mudanças)
         addClienteForm.addEventListener('submit', (e) => {
@@ -1683,7 +1716,7 @@
             const clienteChave = target.dataset.clienteChave;
             if (target.classList.contains('remover-cliente-cadastro-btn')) {
                 const clienteNome = cadastroClientes[clienteChave]?.nome || 'Cliente';
-                if (confirm(`Tem certeza que deseja remover "${clienteNome}" do seu cadastro de clientes?\n\n(Atenção: Isso NÃO afeta o histórico de dívidas dele na "Gestão de Fiado".)`)) {
+                if (confirm(`Tem certeza que deseja remover "${clienteNome}" do seu cadastro de clientes?\n\n(Atenção: Isso NÃO afeta o histórico de dívidas dele na "Gestão de Pagamentos a Receber".)`)) {
                     delete cadastroClientes[clienteChave];
                     salvarDados();
                     atualizarUI();
@@ -1692,12 +1725,11 @@
                 if (clientesFiado[clienteChave]) {
                     mostrarHistoricoFiado(clienteChave);
                 } else {
-                    alert('Este cliente está no cadastro, mas não possui histórico de fiado.');
+                    alert('Este cliente está no cadastro, mas não possui histórico de débitos.');
                 }
             }
         });
 
-        // Listener da Gestão de Fiado (Sem mudanças)
         // Listener da Gestão de Fiado (CORRIGIDO)
         listaClientesFiadoEl.addEventListener('click', (e) => {
             const target = e.target.closest('button');
