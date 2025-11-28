@@ -65,7 +65,7 @@
         .btn-outline-danger {
             background-color: transparent;
             color: #dc2626;
-            border: 1px solid #dc2626;
+            border: 2px solid #dc2626; /* Borda mais grossa para o botão de zerar */
             padding: 0.25rem 0.5rem;
         }
         .btn-outline-danger:hover {
@@ -335,7 +335,7 @@
                         </div>
 
                         <div class="border-t pt-3">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h3>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Recebimentos de Atrasados</h3>
                             <div class="space-y-2 pl-4 text-base">
                                 <div class="flex justify-between items-center text-gray-600">
                                     <span class="flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i>(Pgs) Dinheiro:</span>
@@ -445,6 +445,7 @@
                         <input type="text" id="buscadoGlobal" class="input-field pl-10" placeholder="Digite nome ou telefone...">
                     </div>
                 </div>
+
                 <div class="card h-fit">
                     <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
                         <i data-lucide="clipboard-list"></i>
@@ -545,6 +546,11 @@
                         <button id="limparHistoricoBtn" class="btn btn-danger w-full">
                             <i data-lucide="trash-2"></i>
                             Apagar Histórico Antigo (Requer Senha)
+                        </button>
+                        
+                        <button id="zerarSistemaBtn" class="btn btn-outline-danger w-full font-bold text-red-700 hover:bg-red-50">
+                            <i data-lucide="alert-triangle"></i>
+                            Zerar Sistema (Manter Clientes)
                         </button>
                     </div>
                 </div>
@@ -670,6 +676,8 @@
         const importarBtn = document.getElementById('importarBtn');
         const importarDadosInput = document.getElementById('importarDadosInput');
         const limparHistoricoBtn = document.getElementById('limparHistoricoBtn'); 
+        // NOVO BOTÃO
+        const zerarSistemaBtn = document.getElementById('zerarSistemaBtn');
 
         // Relatório Acumulado
         const dataInicioInput = document.getElementById('dataInicio');
@@ -905,6 +913,29 @@
             atualizarUI();
             alert('Histórico de vendas antigo foi permanentemente apagado! (A lista de contas a receber foi mantida).');
         }
+        
+        // NOVA FUNÇÃO: ZERAR TUDO EXCETO CLIENTES
+        const zerarTudoExcetoClientes = () => {
+            historicoVendas = {};
+            clientesFiado = {}; // Isso apaga todas as dívidas e transações
+            vendasHoje = [];
+            comandasHoje = [];
+            pagamentosHoje = [];
+            configComandas = { inicioA: 0, finalA: 0, inicioB: 0, finalB: 0, trocoInicial: 0 };
+            
+            // Note que NÃO tocamos em 'cadastroClientes'
+            
+            // Limpa inputs da tela
+            inicioComandaAInput.value = ''; 
+            finalComandaAInput.value = ''; 
+            inicioComandaBInput.value = ''; 
+            finalComandaBInput.value = ''; 
+            trocoInicialInput.value = '';
+            
+            salvarDados();
+            atualizarUI();
+            alert('O sistema foi zerado com sucesso! Todo o histórico, vendas e dívidas foram apagados.\n\nApenas o Cadastro de Clientes (nomes e telefones) foi mantido.');
+        };
 
         const ordenarComandas = (a, b) => {
             const tipoA = a.charAt(0); const tipoB = b.charAt(0);
@@ -1262,7 +1293,7 @@
                     </div>
 
                     <div class="border-t pt-3">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h4>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Recebimentos (Antigos)</h4>
                         <div class="space-y-2 pl-4 text-sm">
                             <div class="flex justify-between items-center"><p>(Pgs) Dinheiro:</p><p>${formatarMoeda(resumoPagamentos.Dinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Cartão:</p><p>${formatarMoeda(resumoPagamentos.Cartão)}</p></div>
@@ -1287,7 +1318,7 @@
                     </div>
                     
                     <div class="border-t pt-3 no-print">
-                        <h4 class="font-semibold mb-2">Detalhes Pgs outros dias (${pagamentos ? pagamentos.length : 0} registros):</h4>
+                        <h4 class="font-semibold mb-2">Detalhes Recebimentos de Atrasados (${pagamentos ? pagamentos.length : 0} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2 text-sm">${pagamentosHtmlDetalhes}</ul>
                     </div>
                     
@@ -1367,7 +1398,7 @@
                     </div>
 
                     <div class="border-t pt-3">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h4>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Recebimentos (Antigos)</h4>
                         <div class="space-y-2 pl-4 text-sm">
                             <div class="flex justify-between items-center"><p>(Pgs) Dinheiro:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoDinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Cartão:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoCartao)}</p></div>
@@ -2014,6 +2045,14 @@
         limparHistoricoBtn.addEventListener('click', () => {
             senhaModalMensagem.innerHTML = '<strong>Atenção!</strong> Esta ação vai apagar <strong>PERMANENTEMENTE</strong> todo o histórico de relatórios salvos.<br><br>Recomenda-se exportar um backup primeiro. Digite a senha para confirmar.';
             acaoPendenteComSenha = limparHistoricoAntigo; 
+            senhaModal.style.display = 'flex';
+            senhaInput.focus();
+        });
+        
+        // NOVO: Evento do Botão Zerar Sistema
+        zerarSistemaBtn.addEventListener('click', () => {
+            senhaModalMensagem.innerHTML = '<strong class="text-red-600">PERIGO! AÇÃO IRREVERSÍVEL!</strong><br><br>Você está prestes a <strong>ZERAR TODO O SISTEMA</strong>.<br>Isso apagará:<br>- Todo o histórico de vendas<br>- Todas as contas a receber (dívidas)<br>- Todas as vendas de hoje<br><br><strong>Apenas o cadastro de clientes será mantido.</strong><br><br>Digite a senha para confirmar.';
+            acaoPendenteComSenha = zerarTudoExcetoClientes;
             senhaModal.style.display = 'flex';
             senhaInput.focus();
         });
