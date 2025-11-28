@@ -96,6 +96,19 @@
         .btn-outline-secondary:hover {
             background-color: #f3f4f6;
         }
+        /* Botão de Editar */
+        .btn-outline-primary {
+            background-color: transparent;
+            color: #2563eb;
+            border: 1px solid #2563eb;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        .btn-outline-primary:hover {
+            background-color: #eff6ff;
+        }
+
         .input-field {
             width: 100%;
             padding: 0.75rem;
@@ -129,8 +142,8 @@
             justify-content: center;
         }
         
-        /* --- CORREÇÃO AQUI: Força o modal de senha a ficar ACIMA de tudo --- */
-        #senhaModal {
+        /* Modal de senha e edição acima dos outros */
+        #senhaModal, #editarClienteModal {
             z-index: 2000 !important;
         }
         
@@ -607,12 +620,39 @@
         </div>
     </div>
 
+    <div id="editarClienteModal" class="modal" style="display: none;">
+        <div class="modal-content !max-w-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i data-lucide="pencil" class="text-blue-600"></i>
+                Editar Cliente
+            </h2>
+            <div class="space-y-4">
+                <p class="text-sm text-gray-500 bg-blue-50 p-2 rounded">
+                    <strong>Atenção:</strong> Alterar o número de telefone migrará todas as dívidas e histórico para o novo número automaticamente.
+                </p>
+                <div>
+                    <label for="editNome" class="block text-sm font-medium text-gray-600 mb-1">Nome</label>
+                    <input type="text" id="editNome" class="input-field">
+                </div>
+                <div>
+                    <label for="editTelefone" class="block text-sm font-medium text-gray-600 mb-1">Telefone (Novo)</label>
+                    <input type="tel" id="editTelefone" class="input-field">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button id="cancelarEdicaoBtn" class="btn btn-secondary">Cancelar</button>
+                <button id="salvarEdicaoBtn" class="btn btn-primary">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Inicializa os ícones
         lucide.createIcons();
 
         // --- Variável de Estado ---
         let isModoDistribuido = false;
+        let clienteEmEdicaoKey = null; // Armazena o telefone antigo durante a edição
 
         // --- Elementos da UI ---
         const vendaForm = document.getElementById('vendaForm');
@@ -717,6 +757,13 @@
         const historicoFiadoModalClose = document.getElementById('historicoFiadoModalClose');
         const historicoFiadoModalTitulo = document.getElementById('historicoFiadoModalTitulo');
         const historicoFiadoModalConteudo = document.getElementById('historicoFiadoModalConteudo');
+
+        // NOVO: Modal de Edição
+        const editarClienteModal = document.getElementById('editarClienteModal');
+        const editNomeInput = document.getElementById('editNome');
+        const editTelefoneInput = document.getElementById('editTelefone');
+        const cancelarEdicaoBtn = document.getElementById('cancelarEdicaoBtn');
+        const salvarEdicaoBtn = document.getElementById('salvarEdicaoBtn');
 
 
         // --- LÓGICA DE DADOS ---
@@ -979,6 +1026,63 @@
             mostrarHistoricoFiado(clienteKey); // Atualiza o modal aberto
             alert('Pagamento estornado com sucesso!');
         };
+        
+        // --- NOVA FUNÇÃO: SALVAR EDIÇÃO DE CLIENTE ---
+        const salvarEdicaoCliente = () => {
+            const newNome = editNomeInput.value.trim();
+            const newPhone = limparTelefone(editTelefoneInput.value.trim());
+            const oldPhone = clienteEmEdicaoKey;
+
+            if (!newNome || !newPhone) {
+                alert("Nome e telefone são obrigatórios."); return;
+            }
+
+            // Se mudou o telefone, verificar se o novo já existe
+            if (newPhone !== oldPhone && cadastroClientes[newPhone]) {
+                alert("Este novo número de telefone já pertence a outro cliente cadastrado."); return;
+            }
+
+            // 1. Atualizar CADASTRO
+            if (newPhone !== oldPhone) {
+                // Criar novo e apagar velho
+                cadastroClientes[newPhone] = { nome: newNome, telefone: newPhone };
+                delete cadastroClientes[oldPhone];
+            } else {
+                // Só atualizar nome
+                cadastroClientes[oldPhone].nome = newNome;
+            }
+
+            // 2. Atualizar DÍVIDAS (clientesFiado)
+            if (clientesFiado[oldPhone]) {
+                if (newPhone !== oldPhone) {
+                    // Migrar dados da dívida
+                    clientesFiado[newPhone] = { ...clientesFiado[oldPhone] };
+                    clientesFiado[newPhone].telefone = newPhone;
+                    clientesFiado[newPhone].nome = newNome;
+                    delete clientesFiado[oldPhone];
+                } else {
+                    clientesFiado[oldPhone].nome = newNome;
+                }
+            } else if (newPhone !== oldPhone && clientesFiado[newPhone]) {
+                 // Caso raro onde existia cadastro mas não divida no antigo, mas existe divida no novo (improvável devido a check anterior, mas safe)
+                 clientesFiado[newPhone].nome = newNome;
+            }
+
+            // 3. Atualizar PAGAMENTOS DE HOJE (Se houver) para não quebrar referências
+            if (newPhone !== oldPhone) {
+                pagamentosHoje.forEach(pag => {
+                    if (pag.telefone === oldPhone) {
+                        pag.telefone = newPhone;
+                        pag.cliente = newNome;
+                    }
+                });
+            }
+
+            salvarDados();
+            atualizarUI();
+            editarClienteModal.style.display = 'none';
+            alert("Cliente atualizado com sucesso!");
+        };
 
         const ordenarComandas = (a, b) => {
             const tipoA = a.charAt(0); const tipoB = b.charAt(0);
@@ -1154,11 +1258,14 @@
                         <p class="text-sm text-gray-500">${formatarTelefone(cliente.telefone)}</p>
                     </div>
                     <div class="flex gap-2">
-                        <button class="btn btn-outline-secondary text-xs ver-historico-cadastro-btn" data-cliente-chave="${chave}">
-                            <i data-lucide="history" class="w-3 h-3"></i>Histórico
+                        <button class="btn btn-outline-primary text-xs editar-cliente-btn" data-cliente-chave="${chave}" title="Editar">
+                            <i data-lucide="pencil" class="w-3 h-3"></i>
                         </button>
-                        <button class="btn btn-outline-danger text-xs remover-cliente-cadastro-btn" data-cliente-chave="${chave}">
-                            <i data-lucide="trash-2" class="w-3 h-3"></i>Remover
+                        <button class="btn btn-outline-secondary text-xs ver-historico-cadastro-btn" data-cliente-chave="${chave}" title="Histórico">
+                            <i data-lucide="history" class="w-3 h-3"></i>
+                        </button>
+                        <button class="btn btn-outline-danger text-xs remover-cliente-cadastro-btn" data-cliente-chave="${chave}" title="Remover">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
                         </button>
                     </div>
                 `;
@@ -1825,11 +1932,12 @@
             alert('Cliente adicionado ao cadastro!');
         });
         
-        // Listener do Cadastro de Clientes (Sem mudanças)
+        // Listener do Cadastro de Clientes (COM BOTÃO EDITAR ADICIONADO)
         listaClientesCadastradosEl.addEventListener('click', (e) => {
             const target = e.target.closest('button'); 
             if (!target) return;
             const clienteChave = target.dataset.clienteChave;
+            
             if (target.classList.contains('remover-cliente-cadastro-btn')) {
                 const clienteNome = cadastroClientes[clienteChave]?.nome || 'Cliente';
                 if (confirm(`Tem certeza que deseja remover "${clienteNome}" do seu cadastro de clientes?\n\n(Atenção: Isso NÃO afeta o histórico de dívidas dele na "Gestão de Pagamentos a Receber".)`)) {
@@ -1843,8 +1951,27 @@
                 } else {
                     alert('Este cliente está no cadastro, mas não possui histórico de débitos.');
                 }
+            } else if (target.classList.contains('editar-cliente-btn')) {
+                // --- LÓGICA DE ABRIR MODAL DE EDIÇÃO ---
+                const cliente = cadastroClientes[clienteChave];
+                if (!cliente) return;
+                
+                clienteEmEdicaoKey = clienteChave; // Salva chave atual
+                editNomeInput.value = cliente.nome;
+                editTelefoneInput.value = formatarTelefone(cliente.telefone);
+                
+                editarClienteModal.style.display = 'flex';
+                editNomeInput.focus();
             }
         });
+        
+        // EVENTOS DO MODAL DE EDIÇÃO
+        cancelarEdicaoBtn.addEventListener('click', () => {
+            editarClienteModal.style.display = 'none';
+            clienteEmEdicaoKey = null;
+        });
+        
+        salvarEdicaoBtn.addEventListener('click', salvarEdicaoCliente);
 
         // Listener da Gestão de Fiado (CORRIGIDO)
         listaClientesFiadoEl.addEventListener('click', (e) => {
@@ -2158,6 +2285,11 @@
                 }
                 if (event.target == historicoFiadoModal) {
                     historicoFiadoModal.style.display = 'none';
+                }
+                // FECHA MODAL DE EDIÇÃO SE CLICAR FORA
+                if (event.target == editarClienteModal) {
+                    editarClienteModal.style.display = 'none';
+                    clienteEmEdicaoKey = null;
                 }
             });
         });
