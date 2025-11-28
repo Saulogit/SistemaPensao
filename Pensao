@@ -62,6 +62,13 @@
         .btn-secondary:hover {
             background-color: #4b5563;
         }
+        .btn-warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
         .btn-outline-danger {
             background-color: transparent;
             color: #dc2626;
@@ -123,8 +130,10 @@
         }
         /* Desabilitado */
         .input-field:disabled {
-            background-color: #f3f4f6;
+            background-color: #e5e7eb; /* Um cinza um pouco mais escuro para evidenciar o travamento */
+            color: #6b7280;
             cursor: not-allowed;
+            border-color: #e5e7eb;
         }
         
         /* Estilo para Modal genérico */
@@ -263,7 +272,7 @@
                                     <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-blue-50 has-[:checked]:bg-red-100 has-[:checked]:border-red-400">
                                         <input type="radio" name="tipoPagamento" value="Fiado" class="hidden">
                                         <i data-lucide="book-user" class="w-5 h-5 mr-2 text-red-600"></i>
-                                        <span class="font-medium text-sm leading-tight">Pagamentos a Receber</span>
+                                        <span class="font-medium">A Receber</span>
                                     </label>
                                 </div>
                             </div>
@@ -314,7 +323,7 @@
                         </div>
 
                         <div id="campoClienteFiado" class="hidden space-y-3 pt-4 border-t border-dashed">
-                            <h3 class="text-md font-semibold text-gray-700">Dados do Cliente (para Pagamentos a Receber)</h3>
+                            <h3 class="text-md font-semibold text-gray-700">Dados do Cliente (para A Receber)</h3>
                             <div>
                                 <label for="nomeClienteFiado" class="block text-sm font-medium text-gray-600 mb-1">Nome do Cliente (Obrigatório)</label>
                                 <input type="text" id="nomeClienteFiado" class="input-field" placeholder="Digite o nome..." list="listaNomesClientes">
@@ -458,7 +467,11 @@
                             <input type="number" id="finalComandaB" class="input-field" placeholder="Ex: 180">
                         </div>
                     </div>
-                    <button id="salvarConfigComandasBtn" class="btn btn-primary w-full mt-3"><i data-lucide="save"></i> Salvar Intervalos e Troco</button>
+                    
+                    <button id="salvarConfigComandasBtn" class="btn btn-primary w-full mt-3">
+                        <i data-lucide="save"></i> Salvar e Travar Configuração
+                    </button>
+                    
                     <div class="mt-4 pt-4 border-t border-dashed">
                         <button id="resetarDiaBtn" class="btn btn-danger w-full mt-3">
                             <i data-lucide="power-off"></i>
@@ -530,34 +543,50 @@
 
                 <div class="card h-fit" id="card-relatorio">
                     <div class="no-print"> 
-                        <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
-                            <i data-lucide="history"></i>
-                            Histórico e Relatórios
-                        </h2>
-                        
-                        <div class="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-3">Relatório por Período</h3>
-                            <div class="grid grid-cols-2 gap-3 mb-3">
-                                <div>
-                                    <label for="dataInicio" class="block text-sm font-medium text-gray-600 mb-1">De:</label>
-                                    <input type="date" id="dataInicio" class="input-field text-sm">
-                                </div>
-                                <div>
-                                    <label for="dataFim" class="block text-sm font-medium text-gray-600 mb-1">Até:</label>
-                                    <input type="date" id="dataFim" class="input-field text-sm">
-                                </div>
-                            </div>
-                            <button id="calcularPeriodoBtn" class="btn btn-primary w-full"><i data-lucide="calculator"></i> Calcular Período</button>
-                        </div>
-                        <div id="relatorioAcumuladoContainer" class="mb-4">
-                            </div>
-                        <div class="border-t pt-4">
-                            <label for="seletorData" class="block text-sm font-medium text-gray-600 mb-1">Relatório Diário (Selecione uma data):</label>
-                            <select id="seletorData" class="input-field">
-                                <option>Nenhum relatório salvo</option>
-                            </select>
-                        </div>
-                    </div>
+    <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <i data-lucide="history"></i>
+        Histórico e Relatórios
+    </h2>
+    
+    <div id="historyLockedState" class="text-center py-8 bg-gray-50 rounded-lg border border-gray-200 mb-6">
+        <i data-lucide="lock" class="w-12 h-12 text-gray-400 mx-auto mb-2"></i>
+        <p class="text-gray-500 mb-4">O histórico de vendas é protegido.</p>
+        <button id="btnUnlockHistory" class="btn btn-primary">
+            Desbloquear Visualização
+        </button>
+    </div>
+
+    <div id="historyUnlockedState" class="hidden">
+        <div class="flex justify-end mb-2">
+            <button id="btnLockHistory" class="btn btn-outline-secondary text-xs">
+                <i data-lucide="lock" class="w-3 h-3"></i> Bloquear Novamente
+            </button>
+        </div>
+    <div class="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
+        <div class="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Relatório por Período</h3>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label for="dataInicio" class="block text-sm font-medium text-gray-600 mb-1">De:</label>
+                    <input type="date" id="dataInicio" class="input-field text-sm">
+                </div>
+                <div>
+                    <label for="dataFim" class="block text-sm font-medium text-gray-600 mb-1">Até:</label>
+                    <input type="date" id="dataFim" class="input-field text-sm">
+                </div>
+            </div>
+            <button id="calcularPeriodoBtn" class="btn btn-primary w-full"><i data-lucide="calculator"></i> Calcular Período</button>
+        </div>
+        <div id="relatorioAcumuladoContainer" class="mb-4"></div>
+        <div class="border-t pt-4">
+            <label for="seletorData" class="block text-sm font-medium text-gray-600 mb-1">Relatório Diário (Selecione uma data):</label>
+            <select id="seletorData" class="input-field">
+                <option>Nenhum relatório salvo</option>
+            </select>
+        </div>
+    </div>
+
+    </div>
 
                     <div id="relatorioContainer" class="mt-4 border-t pt-4">
                         <p class="text-center text-gray-500 no-print">Selecione uma data para começar.</p>
@@ -653,6 +682,7 @@
         // --- Variável de Estado ---
         let isModoDistribuido = false;
         let clienteEmEdicaoKey = null; // Armazena o telefone antigo durante a edição
+        let isConfigLocked = false; // ESTADO DE TRAVAMENTO DA CONFIGURAÇÃO
 
         // --- Elementos da UI ---
         const vendaForm = document.getElementById('vendaForm');
@@ -765,9 +795,17 @@
         const cancelarEdicaoBtn = document.getElementById('cancelarEdicaoBtn');
         const salvarEdicaoBtn = document.getElementById('salvarEdicaoBtn');
 
+        // travamento histórico
+        const btnUnlockHistory = document.getElementById('btnUnlockHistory');
+        const historyLockedState = document.getElementById('historyLockedState');
+        const historyUnlockedState = document.getElementById('historyUnlockedState');
+        const btnLockHistory = document.getElementById('btnLockHistory');
+        
+        let isHistoryUnlocked = false; // Variável de controle
+
 
         // --- LÓGICA DE DADOS ---
-        const SENHA_ADMIN = 'admin123';
+        const SENHA_ADMIN = 'patroa68';
         let acaoPendenteComSenha = null; 
 
         const limparTelefone = (tel) => (tel || '').replace(/\D/g, '');
@@ -889,6 +927,9 @@
         let configComandas = JSON.parse(localStorage.getItem('configComandas')) || { 
             inicioA: 0, finalA: 0, inicioB: 0, finalB: 0, trocoInicial: 0 
         }; 
+        
+        // ESTADO DO TRAVAMENTO
+        isConfigLocked = localStorage.getItem('isConfigLocked') === 'true';
 
         // Funções de formatação e salvamento
         const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -918,6 +959,7 @@
             localStorage.setItem('pagamentosHoje', JSON.stringify(pagamentosHoje)); 
             localStorage.setItem('configComandas', JSON.stringify(configComandas)); 
             localStorage.setItem('cadastroClientes', JSON.stringify(cadastroClientes));
+            localStorage.setItem('isConfigLocked', isConfigLocked); // SALVA O ESTADO
         };
         
         const arquivarVendasDoDia = () => {
@@ -948,22 +990,39 @@
                 }
             };
         };
-        
+        //Historico
+        const atualizarEstadoHistorico = () => {
+            if (isHistoryUnlocked) {
+        historyLockedState.classList.add('hidden');
+        historyUnlockedState.classList.remove('hidden');
+        // Força renderização do seletor se estiver desbloqueado
+        renderizarSeletorHistorico(); 
+            } else {
+        historyLockedState.classList.remove('hidden');
+        historyUnlockedState.classList.add('hidden');
+        // Limpa a visualização do relatório para segurança
+        relatorioContainer.innerHTML = '<p class="text-center text-gray-500 no-print">Histórico Bloqueado.</p>';
+            }
+        };
+
         const resetarDadosDoDia = () => {
             arquivarVendasDoDia();
             vendasHoje = [];
             comandasHoje = [];
             pagamentosHoje = []; 
             configComandas = { inicioA: 0, finalA: 0, inicioB: 0, finalB: 0, trocoInicial: 0 }; 
+            isConfigLocked = false; // DESTRAVA AO RESETAR O DIA
             
+            // Limpa os inputs
             inicioComandaAInput.value = ''; 
             finalComandaAInput.value = ''; 
             inicioComandaBInput.value = ''; 
             finalComandaBInput.value = ''; 
-            
             trocoInicialInput.value = '';
+            
             salvarDados();
             atualizarUI();
+            
             setTimeout(() => {
                 alert('Dia encerrado e arquivado com sucesso! Novo dia iniciado.');
                 
@@ -989,8 +1048,7 @@
             comandasHoje = [];
             pagamentosHoje = [];
             configComandas = { inicioA: 0, finalA: 0, inicioB: 0, finalB: 0, trocoInicial: 0 };
-            
-            // Note que NÃO tocamos em 'cadastroClientes'
+            isConfigLocked = false;
             
             // Limpa inputs da tela
             inicioComandaAInput.value = ''; 
@@ -1082,6 +1140,26 @@
             atualizarUI();
             editarClienteModal.style.display = 'none';
             alert("Cliente atualizado com sucesso!");
+        };
+        
+        // --- FUNÇÃO AUXILIAR PARA ATUALIZAR ESTADO DOS INPUTS DE CONFIG ---
+        const atualizarEstadoInputsConfig = () => {
+            const inputs = [trocoInicialInput, inicioComandaAInput, finalComandaAInput, inicioComandaBInput, finalComandaBInput];
+            
+            inputs.forEach(input => {
+                input.disabled = isConfigLocked;
+            });
+            
+            if (isConfigLocked) {
+                salvarConfigComandasBtn.innerHTML = '<i data-lucide="lock"></i> Destravar Configuração (Requer Senha)';
+                salvarConfigComandasBtn.classList.remove('btn-primary');
+                salvarConfigComandasBtn.classList.add('btn-secondary'); // Cor cinza para indicar travado/ação secundária
+            } else {
+                salvarConfigComandasBtn.innerHTML = '<i data-lucide="save"></i> Salvar e Travar Configuração';
+                salvarConfigComandasBtn.classList.remove('btn-secondary');
+                salvarConfigComandasBtn.classList.add('btn-primary');
+            }
+            lucide.createIcons();
         };
 
         const ordenarComandas = (a, b) => {
@@ -1632,12 +1710,19 @@
             renderizarCadastroClientes();
             renderizarDatalistClientes();
             renderizarVendasDoDia();
+            atualizarEstadoHistorico();
             renderizarSeletorHistorico();
+            
+            // PREENCHE INPUTS DE CONFIG
             trocoInicialInput.value = configComandas.trocoInicial > 0 ? configComandas.trocoInicial : '';
             inicioComandaAInput.value = configComandas.inicioA > 0 ? configComandas.inicioA : '';
             finalComandaAInput.value = configComandas.finalA > 0 ? configComandas.finalA : '';
             inicioComandaBInput.value = configComandas.inicioB > 0 ? configComandas.inicioB : '';
             finalComandaBInput.value = configComandas.finalB > 0 ? configComandas.finalB : '';
+            
+            // ATUALIZA ESTADO (TRAVADO/DESTRAVADO)
+            atualizarEstadoInputsConfig();
+            
             lucide.createIcons();
         };
 
@@ -1712,6 +1797,20 @@
             if (!isNaN(numA) && numA > 0) { tipoComanda = 'A'; numeroComanda = numA; }
             else if (!isNaN(numB) && numB > 0) { tipoComanda = 'B'; numeroComanda = numB; }
             else { alert('Por favor, insira um número de comanda válido (A ou B).'); return; }
+            
+            // VALIDAÇÃO DE INTERVALO
+            const { inicioA, finalA, inicioB, finalB } = configComandas;
+            // Só valida se os intervalos estiverem configurados (> 0)
+            if (tipoComanda === 'A' && (inicioA > 0 && finalA > 0)) {
+                if (numeroComanda < inicioA || numeroComanda > finalA) {
+                    if(!confirm(`A comanda Amarela ${numeroComanda} está fora do intervalo configurado (${inicioA}-${finalA}). Deseja registrar mesmo assim?`)) return;
+                }
+            }
+            if (tipoComanda === 'B' && (inicioB > 0 && finalB > 0)) {
+                if (numeroComanda < inicioB || numeroComanda > finalB) {
+                    if(!confirm(`A comanda Branca ${numeroComanda} está fora do intervalo configurado (${inicioB}-${finalB}). Deseja registrar mesmo assim?`)) return;
+                }
+            }
             
             const comandaId = tipoComanda + numeroComanda;
             const transacaoId = new Date().toISOString(); 
@@ -2080,8 +2179,22 @@
             if (target) window.print();
         });
 
-        // Evento de Salvar Configuração (Sem mudanças)
+        // Evento de Salvar Configuração (MODIFICADO PARA OPÇÃO 2)
         salvarConfigComandasBtn.addEventListener('click', () => {
+            // SE ESTIVER TRAVADO (isConfigLocked = true), TENTA DESTRAVAR
+            if (isConfigLocked) {
+                senhaModalMensagem.innerHTML = 'Digite a senha de administrador para <strong>alterar</strong> as configurações do dia (Comandas/Troco).';
+                acaoPendenteComSenha = () => {
+                    isConfigLocked = false;
+                    salvarDados();
+                    atualizarUI();
+                };
+                senhaModal.style.display = 'flex';
+                senhaInput.focus();
+                return;
+            }
+
+            // SE ESTIVER DESTRAVADO (isConfigLocked = false), TENTA SALVAR E TRAVAR
             configComandas.inicioA = parseInt(inicioComandaAInput.value) || 0;
             configComandas.finalA = parseInt(finalComandaAInput.value) || 0;
             configComandas.inicioB = parseInt(inicioComandaBInput.value) || 0;
@@ -2094,8 +2207,10 @@
                 return;
             }
 
+            // Trava
+            isConfigLocked = true;
             salvarDados();
-            alert('Intervalos de comandas e valor inicial salvos para o dia!');
+            alert('Configurações salvas e travadas!');
             atualizarUI();
         });
 
@@ -2108,14 +2223,7 @@
 
             const { inicioA, finalA, inicioB, finalB } = configComandas;
 
-            if ((finalA > 0 && inicioA === 0) || (finalA === 0 && inicioA > 0)) {
-                alert('Por favor, preencha o Início e o Final para as comandas Amarelas, ou deixe ambos em 0.');
-                return;
-            }
-             if ((finalB > 0 && inicioB === 0) || (finalB === 0 && inicioB > 0)) {
-                alert('Por favor, preencha o Início e o Final para as comandas Brancas, ou deixe ambos em 0.');
-                return;
-            }
+            // Validações
             if (finalA > 0 && finalA < inicioA) { alert('Erro: A comanda Amarela final é menor que a inicial.'); return; }
             if (finalB > 0 && finalB < inicioB) { alert('Erro: A comanda Branca final é menor que a inicial.'); return; }
 
@@ -2214,7 +2322,13 @@
         });
         
         importarBtn.addEventListener('click', () => {
-            importarDadosInput.click();
+            senhaModalMensagem.innerHTML = 'Digite a senha de administrador para <strong>importar um backup</strong>.<br>Isso substituirá os dados atuais pelos do arquivo.';
+    
+    // Define a ação que será executada se a senha estiver correta
+            acaoPendenteComSenha = () => importarDadosInput.click();
+    
+            senhaModal.style.display = 'flex';
+            senhaInput.focus();
         });
 
         importarDadosInput.addEventListener('change', (e) => {
@@ -2259,6 +2373,23 @@
             acaoPendenteComSenha = limparHistoricoAntigo; 
             senhaModal.style.display = 'flex';
             senhaInput.focus();
+        });
+        
+        btnUnlockHistory.addEventListener('click', () => {
+             senhaModalMensagem.innerHTML = 'Digite a senha de administrador para <strong>visualizar o histórico</strong>.';
+             
+             acaoPendenteComSenha = () => {
+                 isHistoryUnlocked = true;
+                 atualizarUI(); 
+             };
+             
+             senhaModal.style.display = 'flex';
+             senhaInput.focus();
+        });
+
+        btnLockHistory.addEventListener('click', () => {
+            isHistoryUnlocked = false; // Define como bloqueado
+            atualizarUI(); // A interface se encarrega de esconder a div e mostrar o cadeado
         });
         
         // NOVO: Evento do Botão Zerar Sistema
