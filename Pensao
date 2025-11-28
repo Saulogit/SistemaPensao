@@ -174,41 +174,34 @@
             line-height: 1;
         }
 
-        /* --- CSS DE IMPRESSÃO DEFINITIVO --- */
+        /* --- CSS DE IMPRESSÃO INFALÍVEL --- */
         @media print {
-            html, body {
-                height: auto !important;
-                min-height: 0 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: 0 !important;
-                background: #ffffff !important;
-                overflow: hidden;
-            }
-
-            body * {
-                visibility: hidden;
-            }
-
-            #card-relatorio {
-                visibility: visible;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 1rem;
-                border: none;
-                box-shadow: none;
-            }
-            
-            #card-relatorio * {
-                visibility: visible;
-            }
-
-            .no-print {
+            /* 1. Esconde TUDO que é filho direto do body */
+            body > * {
                 display: none !important;
             }
+
+            /* 2. Mostra e posiciona APENAS a área de impressão */
+            #print-area {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                background-color: white;
+                color: black;
+            }
+
+            /* 3. Garante que o conteúdo dentro da área de impressão seja visível */
+            #print-area * {
+                visibility: visible !important;
+                display: block; /* Restaura comportamento de bloco */
+            }
+            
+            /* Ajustes para tabelas/listas dentro da impressão ficarem bonitas */
+            #print-area .flex { display: flex !important; }
+            #print-area .grid { display: grid !important; }
+            #print-area .hidden { display: none !important; }
         }
         /* --- FIM DO CSS DE IMPRESSÃO --- */
 
@@ -377,7 +370,7 @@
                         </div>
 
                         <div class="border-t pt-3">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Recebimentos de Atrasados</h3>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h3>
                             <div class="space-y-2 pl-4 text-base">
                                 <div class="flex justify-between items-center text-gray-600">
                                     <span class="flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i>(Pgs) Dinheiro:</span>
@@ -674,6 +667,11 @@
             </div>
         </div>
     </div>
+
+    <div id="print-area" class="hidden">
+    </div>
+
+    
 
     <script type="module">
         // Inicializa os ícones
@@ -1521,7 +1519,7 @@
                     </div>
 
                     <div class="border-t pt-3">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Recebimentos (Antigos)</h4>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h4>
                         <div class="space-y-2 pl-4 text-sm">
                             <div class="flex justify-between items-center"><p>(Pgs) Dinheiro:</p><p>${formatarMoeda(resumoPagamentos.Dinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Cartão:</p><p>${formatarMoeda(resumoPagamentos.Cartão)}</p></div>
@@ -1540,20 +1538,14 @@
                         </div>
                     </div>
 
-                    <div class="border-t pt-3 space-y-2 bg-blue-50 p-3 rounded-lg no-print">
-                        <h4 class="text-lg font-semibold text-blue-800 mb-2">Previsão do Caixa (Dinheiro)</h4>
-                        <div class="flex justify-between text-sm text-blue-700"><p>Valor Inicial (Troco):</p><p>${formatarMoeda(trocoInicial || 0)}</p></div>
-                        <div class="flex justify-between font-bold text-blue-900 text-base"><p>Total em Caixa (Dinheiro):</p><p>${formatarMoeda(totalDinheiroRelatorio)}</p></div>
-                        <p class="text-xs text-blue-600">(Troco + Vendas Dinheiro + Pgs Dinheiro)</p>
-                    </div>
-
+                
                     <div class="border-t pt-3 no-print">
                         <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2 text-sm">${vendasHtml}</ul>
                     </div>
                     
                     <div class="border-t pt-3 no-print">
-                        <h4 class="font-semibold mb-2">Detalhes Recebimentos de Atrasados (${pagamentos ? pagamentos.length : 0} registros):</h4>
+                        <h4 class="font-semibold mb-2">Detalhes Pgs outros dias (${pagamentos ? pagamentos.length : 0} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2 text-sm">${pagamentosHtmlDetalhes}</ul>
                     </div>
                     
@@ -1633,7 +1625,7 @@
                     </div>
 
                     <div class="border-t pt-3">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Recebimentos (Antigos)</h4>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Pgs outros dias</h4>
                         <div class="space-y-2 pl-4 text-sm">
                             <div class="flex justify-between items-center"><p>(Pgs) Dinheiro:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoDinheiro)}</p></div>
                             <div class="flex justify-between items-center"><p>(Pgs) Cartão:</p><p>${formatarMoeda(totaisAcumulados.pagamentosFiadoCartao)}</p></div>
@@ -1652,13 +1644,7 @@
                         </div>
                     </div>
 
-                    <div class="border-t pt-3 space-y-2 bg-blue-50 p-3 rounded-lg">
-                        <h4 class="text-lg font-semibold text-blue-800 mb-2">Previsão do Caixa (Dinheiro)</h4>
-                        <div class="flex justify-between text-sm text-blue-700"><p>Total Valor Inicial (Troco):</p><p>${formatarMoeda(totaisAcumulados.trocoInicialTotal)}</p></div>
-                        <div class="flex justify-between font-bold text-blue-900 text-base"><p>Total em Dinheiro Gerado:</p><p>${formatarMoeda(totalDinheiroGerado)}</p></div>
-                        <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pgs Dinheiro)</p>
-                    </div>
-                </div>
+                    
             `;
         };
         
@@ -2174,9 +2160,42 @@
         // Eventos de Histórico (Sem mudanças)
         seletorData.addEventListener('change', (e) => mostrarRelatorio(e.target.value));
         calcularPeriodoBtn.addEventListener('click', mostrarRelatorioAcumulado);
+        // Lógica de Impressão (Área Dedicada)
         relatorioContainer.addEventListener('click', (e) => {
             const target = e.target.closest('#imprimirBtn');
-            if (target) window.print();
+            if (target) {
+                // 1. Pega a área de impressão e limpa
+                const printArea = document.getElementById('print-area');
+                printArea.innerHTML = '';
+
+                // 2. Clona o conteúdo do relatório
+                const conteudoOriginal = document.getElementById('card-relatorio');
+                
+                // 3. Cria um cabeçalho simples para a folha
+                const header = document.createElement('div');
+                header.innerHTML = `<h1 class="text-2xl font-bold mb-4 text-center">Relatório de Gestão</h1><hr class="mb-4 border-gray-400">`;
+                printArea.appendChild(header);
+
+                // 4. Copia o conteúdo do relatório (apenas a parte de dados)
+                // Vamos pegar especificamente o 'relatorioContainer' para evitar pegar os botões de topo
+                const dadosRelatorio = document.getElementById('relatorioContainer').cloneNode(true);
+                
+                // Removemos botões indesejados (como o próprio botão de imprimir) de dentro do clone
+                const botoes = dadosRelatorio.querySelectorAll('button');
+                botoes.forEach(btn => btn.remove());
+                
+                // Remove textos de "no-print" se houver
+                const noPrints = dadosRelatorio.querySelectorAll('.no-print');
+                noPrints.forEach(el => el.remove());
+
+                printArea.appendChild(dadosRelatorio);
+
+                // 5. Chama a impressão
+                window.print();
+
+                // 6. Limpa a área depois (opcional, mas bom para higiene)
+                // printArea.innerHTML = ''; 
+            }
         });
 
         // Evento de Salvar Configuração (MODIFICADO PARA OPÇÃO 2)
