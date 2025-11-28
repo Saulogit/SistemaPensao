@@ -65,12 +65,26 @@
         .btn-outline-danger {
             background-color: transparent;
             color: #dc2626;
-            border: 2px solid #dc2626; /* Borda mais grossa para o botão de zerar */
+            border: 2px solid #dc2626; 
             padding: 0.25rem 0.5rem;
         }
         .btn-outline-danger:hover {
             background-color: #fef2f2;
         }
+        /* Estilo para botão pequeno de exclusão no histórico */
+        .btn-icon-danger {
+            background-color: transparent;
+            color: #ef4444;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            border: 1px solid transparent;
+        }
+        .btn-icon-danger:hover {
+            background-color: #fee2e2;
+            border-color: #fca5a5;
+        }
+
         .btn-outline-secondary {
             background-color: transparent;
             color: #4b5563;
@@ -114,6 +128,12 @@
             align-items: center;
             justify-content: center;
         }
+        
+        /* --- CORREÇÃO AQUI: Força o modal de senha a ficar ACIMA de tudo --- */
+        #senhaModal {
+            z-index: 2000 !important;
+        }
+        
         .modal-content {
             background-color: #fefefe;
             margin: auto;
@@ -936,6 +956,29 @@
             atualizarUI();
             alert('O sistema foi zerado com sucesso! Todo o histórico, vendas e dívidas foram apagados.\n\nApenas o Cadastro de Clientes (nomes e telefones) foi mantido.');
         };
+        
+        // --- NOVA FUNÇÃO: REMOVER PAGAMENTO DO HISTÓRICO COM SENHA ---
+        const removerPagamento = (clienteKey, dataTransacao) => {
+            const cliente = clientesFiado[clienteKey];
+            if (!cliente || !cliente.transacoes) return;
+
+            // 1. Remove do histórico do cliente
+            const indexNoCliente = cliente.transacoes.findIndex(t => t.data === dataTransacao);
+            if (indexNoCliente > -1) {
+                cliente.transacoes.splice(indexNoCliente, 1);
+            }
+
+            // 2. Remove de pagamentosHoje (se existir lá) para bater o caixa do dia
+            const indexNoHoje = pagamentosHoje.findIndex(p => p.data === dataTransacao);
+            if (indexNoHoje > -1) {
+                pagamentosHoje.splice(indexNoHoje, 1);
+            }
+
+            salvarDados();
+            atualizarUI();
+            mostrarHistoricoFiado(clienteKey); // Atualiza o modal aberto
+            alert('Pagamento estornado com sucesso!');
+        };
 
         const ordenarComandas = (a, b) => {
             const tipoA = a.charAt(0); const tipoB = b.charAt(0);
@@ -1312,6 +1355,13 @@
                         </div>
                     </div>
 
+                    <div class="border-t pt-3 space-y-2 bg-blue-50 p-3 rounded-lg no-print">
+                        <h4 class="text-lg font-semibold text-blue-800 mb-2">Previsão do Caixa (Dinheiro)</h4>
+                        <div class="flex justify-between text-sm text-blue-700"><p>Valor Inicial (Troco):</p><p>${formatarMoeda(trocoInicial || 0)}</p></div>
+                        <div class="flex justify-between font-bold text-blue-900 text-base"><p>Total em Caixa (Dinheiro):</p><p>${formatarMoeda(totalDinheiroRelatorio)}</p></div>
+                        <p class="text-xs text-blue-600">(Troco + Vendas Dinheiro + Pgs Dinheiro)</p>
+                    </div>
+
                     <div class="border-t pt-3 no-print">
                         <h4 class="font-semibold mb-2">Detalhes das Vendas (${vendas.length} registros):</h4>
                         <ul class="space-y-1 max-h-40 overflow-y-auto pr-2 text-sm">${vendasHtml}</ul>
@@ -1416,6 +1466,13 @@
                             <div class="flex justify-between items-center font-bold text-gray-900 border-t pt-1 mt-1 text-base"><p>Total Recebido (Período):</p><p>${formatarMoeda(acumuladoTotal)}</p></div>
                         </div>
                     </div>
+
+                    <div class="border-t pt-3 space-y-2 bg-blue-50 p-3 rounded-lg">
+                        <h4 class="text-lg font-semibold text-blue-800 mb-2">Previsão do Caixa (Dinheiro)</h4>
+                        <div class="flex justify-between text-sm text-blue-700"><p>Total Valor Inicial (Troco):</p><p>${formatarMoeda(totaisAcumulados.trocoInicialTotal)}</p></div>
+                        <div class="flex justify-between font-bold text-blue-900 text-base"><p>Total em Dinheiro Gerado:</p><p>${formatarMoeda(totalDinheiroGerado)}</p></div>
+                        <p class="text-xs text-blue-600">(Total Troco + Total Vendas Dinheiro + Total Pgs Dinheiro)</p>
+                    </div>
                 </div>
             `;
         };
@@ -1431,17 +1488,30 @@
                 .map(t => {
                     saldoCorrente += t.valor;
                     let descricao = ''; let valorClasse = '';
-                    if (t.tipo === 'compra') { descricao = `Compra (Comanda #${t.comanda})`; valorClasse = 'text-red-600'; }
+                    let btnExcluir = ''; // Variável para o botão
+
+                    if (t.tipo === 'compra') { 
+                        descricao = `Compra (Comanda #${t.comanda})`; 
+                        valorClasse = 'text-red-600'; 
+                    }
                     else if (t.tipo === 'pagamento') { 
                         const formaPag = t.forma || 'Dinheiro'; 
                         descricao = `Pagamento (${formaPag})`; 
-                        valorClasse = 'text-green-600'; 
+                        valorClasse = 'text-green-600';
+                        // Adiciona botão de exclusão apenas para pagamentos
+                        btnExcluir = `<button class="btn-icon-danger ml-2 excluir-pagamento-btn" data-data-transacao="${t.data}" data-cliente-chave="${chaveCliente}" title="Estornar Pagamento (Requer Senha)"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
                     }
-                    else if (t.tipo === 'importado') { descricao = 'Saldo Anterior (Importado)'; valorClasse = 'text-gray-600'; }
+                    else if (t.tipo === 'importado') { 
+                        descricao = 'Saldo Anterior (Importado)'; 
+                        valorClasse = 'text-gray-600'; 
+                    }
                     return `
                     <li class="flex justify-between items-center p-3 border-b">
                         <div><p class="font-semibold">${descricao}</p><p class="text-sm text-gray-500">${formatarDataHora(t.data)}</p></div>
-                        <div class="text-right"><p class="font-bold ${valorClasse}">${formatarMoeda(t.valor)}</p><p class="text-sm text-gray-600">Saldo Devedor: ${formatarMoeda(saldoCorrente)}</p></div>
+                        <div class="flex items-center">
+                            <div class="text-right mr-2"><p class="font-bold ${valorClasse}">${formatarMoeda(t.valor)}</p><p class="text-sm text-gray-600">Saldo Devedor: ${formatarMoeda(saldoCorrente)}</p></div>
+                            ${btnExcluir}
+                        </div>
                     </li>`;
                 }).join('');
             historicoFiadoModalConteudo.innerHTML = `<ul class="space-y-1">${transacoesHtml}</ul>`;
@@ -1466,6 +1536,21 @@
 
         // --- LÓGICA DE EVENTOS ---
         
+        // NOVO: Evento para clique na lixeira dentro do modal de histórico
+        historicoFiadoModalConteudo.addEventListener('click', (e) => {
+            const btn = e.target.closest('.excluir-pagamento-btn');
+            if (btn) {
+                const clienteChave = btn.dataset.clienteChave;
+                const dataTransacao = btn.dataset.dataTransacao;
+                
+                // Configura o modal de senha para executar a exclusão
+                senhaModalMensagem.innerHTML = '<strong>Atenção!</strong> Você está prestes a excluir este pagamento do histórico.<br>Isso fará o saldo devedor do cliente aumentar.<br><br>Digite a senha para confirmar o estorno.';
+                acaoPendenteComSenha = () => removerPagamento(clienteChave, dataTransacao);
+                senhaModal.style.display = 'flex';
+                senhaInput.focus();
+            }
+        });
+
         // NOVO: Evento da Barra de Busca Global
         buscadorGlobal.addEventListener('input', (e) => {
             const termo = e.target.value;
